@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "karotter Shortcuts",
+  "name": "karotter Express",
   "version": "1.0.0",
-  "description": "karotter.com にキーボードショートカットを追加します。設定ページからキー割り当てを変更できます。",
+  "description": "karotter.com を高速操作できるキーボードショートカット拡張機能。Vim風、Twitter風プリセット、カスタマイズ可能なキーバインド。",
   "icons": {
     "16":  "icons/icon16.png",
     "48":  "icons/icon48.png",
