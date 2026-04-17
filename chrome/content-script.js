@@ -3,6 +3,7 @@
 
   let bindings = { ...DEFAULT_KEYBINDINGS };
   let settings = { ...DEFAULT_SETTINGS };
+  let reactionSlots = DEFAULT_REACTION_SLOTS.map(s => ({ ...s }));
   let focusedIndex = -1;
   let posts = [];
   const FOCUS_CLASS = 'krs-focused';
@@ -20,10 +21,14 @@
   }
 
   function loadBindings() {
-    chrome.storage.sync.get(['keybindings', 'settings'], (result) => {
-      if (result.keybindings) bindings = { ...DEFAULT_KEYBINDINGS, ...result.keybindings };
-      if (result.settings)   settings = { ...DEFAULT_SETTINGS,   ...result.settings };
+    chrome.storage.sync.get(['keybindings', 'settings', 'reactionSlots'], (result) => {
+      if (result.keybindings)   bindings = { ...DEFAULT_KEYBINDINGS, ...result.keybindings };
+      if (result.settings)      settings = { ...DEFAULT_SETTINGS,   ...result.settings };
+      if (result.reactionSlots) reactionSlots = result.reactionSlots;
       applySettings();
+    });
+    chrome.storage.onChanged.addListener((changes) => {
+      if (changes.reactionSlots) reactionSlots = changes.reactionSlots.newValue ?? [];
     });
   }
 
@@ -277,10 +282,64 @@
     navSettings:  SELECTORS.NAV_SETTINGS,
   };
 
+  // ---- クイックリアクション ----
+  async function reactWithEmoji(emoji) {
+    const post = posts[focusedIndex];
+    if (!post) return;
+    const triggerBtn = post.querySelector('button.reaction-trigger');
+    if (!triggerBtn) return;
+
+    // ピッカーを非表示で開く
+    triggerBtn.click();
+    const picker = await waitForElHidden('.reaction-picker', 2000);
+    if (!picker) return;
+    await sleep(50);
+
+    // 現在のカテゴリで探し、なければ全カテゴリを順に試す
+    let btn = findEmojiBtn(picker, emoji);
+    if (!btn) {
+      const cats = Array.from(picker.querySelectorAll('button[aria-label]'))
+        .filter(b => !b.hasAttribute('data-unified'));
+      for (const cat of cats) {
+        cat.click();
+        await sleep(200);
+        btn = findEmojiBtn(picker, emoji);
+        if (btn) break;
+      }
+    }
+    if (btn) btn.click();
+  }
+
+  function findEmojiBtn(picker, emoji) {
+    return Array.from(picker.querySelectorAll('button'))
+      .find(b => b.textContent.trim() === emoji) ?? null;
+  }
+
+  // DOM追加と同時に非表示にして返す（ピッカーをユーザーに見せない）
+  function waitForElHidden(selector, timeout) {
+    return new Promise(resolve => {
+      const el = document.querySelector(selector);
+      if (el) { el.style.visibility = 'hidden'; resolve(el); return; }
+      const obs = new MutationObserver(() => {
+        const found = document.querySelector(selector);
+        if (found) {
+          found.style.visibility = 'hidden';
+          obs.disconnect();
+          resolve(found);
+        }
+      });
+      obs.observe(document.body, { childList: true, subtree: true });
+      setTimeout(() => { obs.disconnect(); resolve(null); }, timeout);
+    });
+  }
+
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
   // ---- キーイベント ----
   // binding値が複数文字（例: "gh"）ならコードとして扱う
   function keyMatches(e, action) {
-    return e.key === bindings[action];
+    const b = bindings[action];
+    return e.code.startsWith('Numpad') ? b === e.code : b === e.key;
   }
 
   function handleKeyDown(e) {
@@ -294,6 +353,15 @@
 
     if (isInputFocused()) return;
 
+    // クイックリアクション（投稿フォーカス中のみ）
+    if (focusedIndex >= 0) {
+      const slot = reactionSlots.find(s => s.key === e.code && s.emoji);
+      if (slot) {
+        e.preventDefault();
+        reactWithEmoji(slot.emoji);
+        return;
+      }
+    }
     // コード（2ストローク）の2打鍵目を処理
     if (pendingChord) {
       clearTimeout(chordTimer);

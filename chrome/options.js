@@ -6,6 +6,8 @@
   let presets = [];         // BUILTIN_PRESETS + ユーザープリセット
   let activePresetId = 'default';
   let capturingAction = null;
+  let reactionSlots = DEFAULT_REACTION_SLOTS.map(s => ({ ...s }));
+  let capturingReactionIdx = null;
 
   const inlineHintsToggle   = document.getElementById('toggle-inline-hints');
   const floatingPanelToggle = document.getElementById('toggle-floating-panel');
@@ -18,12 +20,18 @@
   const presetList    = document.getElementById('preset-list');
   const presetNameInput = document.getElementById('preset-name-input');
   const presetSaveBtn = document.getElementById('preset-save-btn');
+  const reactionBody = document.getElementById('reaction-body');
+  const reactionSaveBtn = document.getElementById('reaction-save-btn');
+  const reactionSaveBanner = document.getElementById('reaction-save-banner');
 
   // ---- ユーティリティ ----
   function keyLabel(key) {
     const map = { ArrowDown: '↓', ArrowUp: '↑', ArrowLeft: '←', ArrowRight: '→',
                   Enter: 'Enter', Escape: 'Esc', ' ': 'Space' };
-    return map[key] ?? key;
+    if (key in map) return map[key];
+    const numpad = key.match(/^Numpad(\w+)$/);
+    if (numpad) return `テンキー${numpad[1]}`;
+    return key;
   }
 
   function conflicts() {
@@ -101,6 +109,28 @@
     saveBtn.disabled = conflicts();
   }
 
+  // ---- リアクションスロット描画 ----
+  function renderReactionSlots() {
+    reactionBody.innerHTML = '';
+    reactionSlots.forEach((slot, i) => {
+      const isCapturing = capturingReactionIdx === i;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="action-name">${i + 1}</td>
+        <td><input type="text" class="emoji-input" data-slot="${i}"
+                   value="${slot.emoji}" placeholder="—" maxlength="8"></td>
+        <td class="key-cell">
+          <kbd class="${isCapturing ? 'capturing' : ''}">${isCapturing ? '…' : keyLabel(slot.key)}</kbd>
+        </td>
+        <td class="edit-cell">
+          <button class="btn-edit ${isCapturing ? 'active' : ''}" data-reaction-slot="${i}">
+            ${isCapturing ? 'キャンセル' : '変更'}
+          </button>
+        </td>`;
+      reactionBody.appendChild(tr);
+    });
+  }
+
   function render() {
     renderPresets();
     renderBindings();
@@ -155,16 +185,23 @@
   }
 
   function handleKeyCapture(e) {
-    if (!capturingAction) return;
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.key === 'Escape') { stopCapture(); return; }
-    current[capturingAction] = e.key;
-    capturingAction = null;
-    // プリセット選択を外す（編集したので未保存状態）
-    activePresetId = '';
-    renderBindings();
-    renderPresets();
+    if (capturingAction) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.key === 'Escape') { stopCapture(); return; }
+      current[capturingAction] = e.code.startsWith('Numpad') ? e.code : e.key;
+      capturingAction = null;
+      activePresetId = '';
+      renderBindings();
+      renderPresets();
+    } else if (capturingReactionIdx !== null) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.key === 'Escape') { capturingReactionIdx = null; renderReactionSlots(); return; }
+      reactionSlots[capturingReactionIdx].key = e.code;
+      capturingReactionIdx = null;
+      renderReactionSlots();
+    }
   }
 
   // ---- 表示設定 ----
@@ -207,14 +244,37 @@
   presetSaveBtn.addEventListener('click', saveAsPreset);
   presetNameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveAsPreset(); });
 
+  reactionBody.addEventListener('input', (e) => {
+    const input = e.target.closest('.emoji-input');
+    if (!input) return;
+    reactionSlots[parseInt(input.dataset.slot)].emoji = input.value.trim();
+  });
+  reactionBody.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-reaction-slot]');
+    if (!btn) return;
+    const idx = parseInt(btn.dataset.reactionSlot);
+    capturingReactionIdx = capturingReactionIdx === idx ? null : idx;
+    capturingAction = null;
+    renderReactionSlots();
+    renderBindings();
+  });
+  reactionSaveBtn.addEventListener('click', () => {
+    chrome.storage.sync.set({ reactionSlots }, () => {
+      reactionSaveBanner.classList.remove('hidden');
+      setTimeout(() => reactionSaveBanner.classList.add('hidden'), 2500);
+    });
+  });
+
   // ---- 初期ロード ----
-  chrome.storage.sync.get(['keybindings', 'userPresets', 'activePresetId', 'settings'], (result) => {
+  chrome.storage.sync.get(['keybindings', 'userPresets', 'activePresetId', 'settings', 'reactionSlots'], (result) => {
     const userPresets = result.userPresets ?? [];
     presets = [...BUILTIN_PRESETS, ...userPresets];
     activePresetId = result.activePresetId ?? 'default';
-    if (result.keybindings) current = { ...DEFAULT_KEYBINDINGS, ...result.keybindings };
-    if (result.settings)   currentSettings = { ...DEFAULT_SETTINGS, ...result.settings };
+    if (result.keybindings)    current = { ...DEFAULT_KEYBINDINGS, ...result.keybindings };
+    if (result.settings)       currentSettings = { ...DEFAULT_SETTINGS, ...result.settings };
+    if (result.reactionSlots)  reactionSlots = result.reactionSlots;
     render();
     renderSettings();
+    renderReactionSlots();
   });
 })();

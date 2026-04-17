@@ -69,6 +69,18 @@ const DEFAULT_SETTINGS = {
   showFloatingPanel: false,
 };
 
+const DEFAULT_REACTION_SLOTS = [
+  { key: 'Numpad1', emoji: '' },
+  { key: 'Numpad2', emoji: '' },
+  { key: 'Numpad3', emoji: '' },
+  { key: 'Numpad4', emoji: '' },
+  { key: 'Numpad5', emoji: '' },
+  { key: 'Numpad6', emoji: '' },
+  { key: 'Numpad7', emoji: '' },
+  { key: 'Numpad8', emoji: '' },
+  { key: 'Numpad9', emoji: '' },
+];
+
 // 組み込みプリセット（readonly）
 const BUILTIN_PRESETS = [
   {
