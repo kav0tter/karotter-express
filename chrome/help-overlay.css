@@ -1,0 +1,26 @@
+.krs-focused {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: -2px;
+  border-radius: 4px;
+  background-color: var(--accent-soft) !important;
+}
+
+.krs-hint {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  background: var(--accent);
+  color: #1e1e2e;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: 0 1px 3px rgba(0,0,0,.3);
+}
