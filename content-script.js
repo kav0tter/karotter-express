@@ -14,7 +14,7 @@
   // ---- 初期化 ----
   function init() {
     loadBindings();
-    document.addEventListener('keydown', handleKeyDown, true);
+    window.addEventListener('keydown', handleKeyDown, true);
     observeTimeline();
     observeRouteChange();
   }
@@ -109,17 +109,21 @@
 
   // ---- Esc の文脈依存処理 ----
   function handleEscape() {
-    // 0. 入力欄にフォーカスがあれば blur して終了
+    // 0. 下書き保存確認ダイアログが表示中なら「破棄して閉じる」をクリック（isInputFocused より先に判定）
+    const discardBtn = Array.from(document.querySelectorAll('button'))
+      .find(b => b.textContent.trim() === '破棄して閉じる');
+    if (discardBtn) { discardBtn.click(); return; }
+    // 1. 入力欄にフォーカスがあれば blur して終了
     if (isInputFocused()) {
       document.activeElement.blur();
       return;
     }
-    // 1. ヘルプオーバーレイが開いていれば閉じる
+    // 2. ヘルプオーバーレイが開いていれば閉じる
     if (HelpOverlay.isVisible()) {
       HelpOverlay.hide();
       return;
     }
-    // 2. モーダルが開いていれば閉じる（karotter は Esc でネイティブに閉じる）
+    // 3. モーダルが開いていれば閉じる（karotter は Esc でネイティブに閉じる）
     const url = location.href;
     if (url.includes('compose=1') || document.querySelector('[role="dialog"]')) {
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
