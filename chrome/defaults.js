@@ -153,7 +153,7 @@ const BUILTIN_PRESETS = [
   },
   {
     id: 'claude',
-    name: '最強 (Claude)',
+    name: 'Claude作',
     readonly: true,
     bindings: {
       focusNext:    'j',
@@ -184,7 +184,7 @@ const BUILTIN_PRESETS = [
   },
   {
     id: 'v0-custom',
-    name: 'v0カスタム',
+    name: 'v0作',
     readonly: true,
     bindings: {
       focusNext:    'j',
