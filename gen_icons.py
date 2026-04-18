@@ -74,14 +74,14 @@ def make_icon(size):
         x2 = line_x0 + full_len * ratio
         d.line([(x1, ly), (x2, ly)], fill=WHITE, width=stroke_line)
 
-    # red dot: tip of the longest (middle) line
-    mid_x2 = line_x0 + full_len * 1.0
-    mid_y  = line_ys[1]
+    # red dot: top-right corner of keycap (notification badge)
     if size >= 48:
-        dot_r = S * 0.075
+        dot_r = S * 0.085
     else:
-        dot_r = S * 0.090
-    draw_dot(d, mid_x2, mid_y, dot_r, RED)
+        dot_r = S * 0.095
+    dot_cx = pad + kw - dot_r * 0.3
+    dot_cy = pad + dot_r * 0.3
+    draw_dot(d, dot_cx, dot_cy, dot_r, RED)
 
     img = img.resize((size, size), Image.LANCZOS)
     return img
