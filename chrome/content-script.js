@@ -283,55 +283,13 @@
   };
 
   // ---- クイックリアクション ----
-  async function reactWithEmoji(emoji) {
+  // main world の injectReactionScript が __karotter_react イベントを受けて fiber 操作する
+  function reactWithEmoji(emoji) {
     const post = posts[focusedIndex];
     if (!post) return;
-    const triggerBtn = post.querySelector('button.reaction-trigger');
-    if (!triggerBtn) return;
-
-    // ピッカーを非表示で開く
-    triggerBtn.click();
-    const picker = await waitForElHidden('.reaction-picker', 2000);
-    if (!picker) return;
-    await sleep(50);
-
-    // 現在のカテゴリで探し、なければ全カテゴリを順に試す
-    let btn = findEmojiBtn(picker, emoji);
-    if (!btn) {
-      const cats = Array.from(picker.querySelectorAll('button[aria-label]'))
-        .filter(b => !b.hasAttribute('data-unified'));
-      for (const cat of cats) {
-        cat.click();
-        await sleep(200);
-        btn = findEmojiBtn(picker, emoji);
-        if (btn) break;
-      }
-    }
-    if (btn) btn.click();
+    document.dispatchEvent(new CustomEvent('__karotter_react', { detail: { emoji } }));
   }
 
-  function findEmojiBtn(picker, emoji) {
-    return Array.from(picker.querySelectorAll('button'))
-      .find(b => b.textContent.trim() === emoji) ?? null;
-  }
-
-  // DOM追加と同時に非表示にして返す（ピッカーをユーザーに見せない）
-  function waitForElHidden(selector, timeout) {
-    return new Promise(resolve => {
-      const el = document.querySelector(selector);
-      if (el) { el.style.visibility = 'hidden'; resolve(el); return; }
-      const obs = new MutationObserver(() => {
-        const found = document.querySelector(selector);
-        if (found) {
-          found.style.visibility = 'hidden';
-          obs.disconnect();
-          resolve(found);
-        }
-      });
-      obs.observe(document.body, { childList: true, subtree: true });
-      setTimeout(() => { obs.disconnect(); resolve(null); }, timeout);
-    });
-  }
 
   function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
