@@ -294,14 +294,24 @@
   function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
   // ---- キーイベント ----
-  // binding値が複数文字（例: "gh"）ならコードとして扱う
+  function parseBinding(b) {
+    if (!b) return { key: '', ctrl: false, alt: false };
+    const parts = b.split('+');
+    return { key: parts[parts.length - 1], ctrl: parts.includes('Ctrl'), alt: parts.includes('Alt') };
+  }
+
   function keyMatches(e, action) {
     const b = bindings[action];
-    return e.code.startsWith('Numpad') ? b === e.code : b === e.key;
+    if (!b) return false;
+    const { key, ctrl, alt } = parseBinding(b);
+    if (e.ctrlKey !== ctrl || e.altKey !== alt) return false;
+    if (e.code.startsWith('Numpad')) return key === e.code;
+    // Ctrl/Alt 付きはケース非感応（Ctrl+i と Ctrl+I を同一視）
+    return (ctrl || alt) ? key.toLowerCase() === e.key.toLowerCase() : key === e.key;
   }
 
   function handleKeyDown(e) {
-    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.metaKey) return;
 
     // Esc は入力中でも処理する
     if (e.key === 'Escape') {
@@ -311,8 +321,8 @@
 
     if (isInputFocused()) return;
 
-    // クイックリアクション（投稿フォーカス中のみ）
-    if (focusedIndex >= 0) {
+    // クイックリアクション（モディファイアなし・投稿フォーカス中のみ）
+    if (!e.ctrlKey && !e.altKey && focusedIndex >= 0) {
       const slot = reactionSlots.find(s => s.key === e.code && s.emoji);
       if (slot) {
         e.preventDefault();
@@ -320,24 +330,33 @@
         return;
       }
     }
-    // コード（2ストローク）の2打鍵目を処理
+    // コード（2ストローク）の2打鍵目を処理（モディファイアが絡む場合はコードをキャンセルしてフォールスルー）
     if (pendingChord) {
-      clearTimeout(chordTimer);
-      const chord = pendingChord + e.key;
-      pendingChord = null;
-      for (const [action, key] of Object.entries(bindings)) {
-        if (key === chord) {
-          e.preventDefault();
-          executeAction(action);
-          return;
+      if (!e.ctrlKey && !e.altKey && e.key.length === 1) {
+        clearTimeout(chordTimer);
+        const chord = pendingChord + e.key;
+        pendingChord = null;
+        for (const [action, key] of Object.entries(bindings)) {
+          if (key === chord) {
+            e.preventDefault();
+            executeAction(action);
+            return;
+          }
         }
+        return;
       }
-      return;
+      clearTimeout(chordTimer);
+      pendingChord = null;
+      // モディファイアコンボはそのまま下の keyMatches へ
     }
 
-    // コードの1打鍵目か判定（bindings に2文字以上の値がある場合）
-    const isChordStart = Object.values(bindings).some(
-      (k) => typeof k === 'string' && k.length > 1 && k[0] === e.key
+    // コードの1打鍵目か判定
+    // - e.key が単一文字のときのみ（ArrowDown 等を除外）
+    // - バインド先が大文字始まりの場合はナmedキー（ArrowDown, Enter, Insert 等）とみなし除外
+    const isChordStart = !e.ctrlKey && !e.altKey && e.key.length === 1 && Object.values(bindings).some(
+      (k) => typeof k === 'string' && k.length > 1 && !k.includes('+')
+           && !/^[A-Z]/.test(k)   // 大文字始まり = named key (Arrow/Enter/Insert 等) は除外
+           && k[0] === e.key
     );
     if (isChordStart) {
       e.preventDefault();

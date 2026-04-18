@@ -50,12 +50,13 @@ const FloatingPanel = (() => {
       }`;
   }
 
-  function keyLabel(key) {
-    const map = {
-      ArrowDown: '↓', ArrowUp: '↑', ArrowLeft: '←', ArrowRight: '→',
-      Enter: 'Enter', Escape: 'Esc', ' ': 'Space',
-    };
-    return map[key] ?? key;
+  function keyLabel(binding) {
+    const map = { ArrowDown: '↓', ArrowUp: '↑', ArrowLeft: '←', ArrowRight: '→',
+                  Enter: 'Enter', Escape: 'Esc', ' ': 'Space' };
+    const parts = (binding ?? '').split('+');
+    const base = parts[parts.length - 1];
+    const mods = parts.slice(0, -1);
+    return [...mods, map[base] ?? base].join('+');
   }
 
   function buildPanelHTML(bindings) {

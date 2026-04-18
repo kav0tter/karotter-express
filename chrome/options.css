@@ -437,6 +437,28 @@ kbd.conflict {
   background: rgba(215,25,33,0.06);
 }
 
+.capture-btns {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.btn-confirm {
+  background: var(--text-display);
+  border: 1px solid var(--text-display);
+  border-radius: var(--radius-sm);
+  color: #000;
+  padding: 5px 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background .15s;
+}
+.btn-confirm:hover { background: var(--success); border-color: var(--success); }
+
 /* ---- TOGGLE ---- */
 .toggle-list {
   border-top: 1px solid var(--line);

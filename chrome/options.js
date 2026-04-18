@@ -6,6 +6,7 @@
   let presets = [];         // BUILTIN_PRESETS + ユーザープリセット
   let activePresetId = 'default';
   let capturingAction = null;
+  let captureBuffer = [];   // 収録中のキー列
   let reactionSlots = DEFAULT_REACTION_SLOTS.map(s => ({ ...s }));
   let capturingReactionIdx = null;
 
@@ -13,7 +14,6 @@
   const floatingPanelToggle = document.getElementById('toggle-floating-panel');
 
   const tbody         = document.getElementById('bindings-body');
-  const saveBtn       = document.getElementById('save-btn');
   const resetBtn      = document.getElementById('reset-btn');
   const conflictBanner = document.getElementById('conflict-banner');
   const saveBanner    = document.getElementById('save-banner');
@@ -21,17 +21,20 @@
   const presetNameInput = document.getElementById('preset-name-input');
   const presetSaveBtn = document.getElementById('preset-save-btn');
   const reactionBody = document.getElementById('reaction-body');
-  const reactionSaveBtn = document.getElementById('reaction-save-btn');
   const reactionSaveBanner = document.getElementById('reaction-save-banner');
 
   // ---- ユーティリティ ----
-  function keyLabel(key) {
-    const map = { ArrowDown: '↓', ArrowUp: '↑', ArrowLeft: '←', ArrowRight: '→',
-                  Enter: 'Enter', Escape: 'Esc', ' ': 'Space' };
-    if (key in map) return map[key];
-    const numpad = key.match(/^Numpad(\w+)$/);
-    if (numpad) return `テンキー${numpad[1]}`;
-    return key;
+  const KEY_DISPLAY = { ArrowDown: '↓', ArrowUp: '↑', ArrowLeft: '←', ArrowRight: '→',
+                        Enter: 'Enter', Escape: 'Esc', ' ': 'Space' };
+
+  function keyLabel(binding) {
+    if (!binding) return '';
+    const parts = binding.split('+');
+    const base = parts[parts.length - 1];
+    const mods = parts.slice(0, -1);
+    const numpad = base.match(/^Numpad(\w+)$/);
+    const baseStr = KEY_DISPLAY[base] ?? (numpad ? `テンキー${numpad[1]}` : base);
+    return [...mods, baseStr].join('+');
   }
 
   function conflicts() {
@@ -89,24 +92,28 @@
       const isConflict  = dups.has(key);
       const isCapturing = capturingAction === action;
 
+      const bufLabel = captureBuffer.length ? captureBuffer.join('') : '…';
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td class="action-name">${label}</td>
         <td class="key-cell">
           <kbd class="${isCapturing ? 'capturing' : ''} ${isConflict && !isCapturing ? 'conflict' : ''}">
-            ${isCapturing ? '…' : keyLabel(key)}
+            ${isCapturing ? bufLabel : keyLabel(key)}
           </kbd>
         </td>
         <td class="edit-cell">
-          <button class="btn-edit ${isCapturing ? 'active' : ''}" data-action="${action}">
-            ${isCapturing ? 'キャンセル' : '変更'}
-          </button>
+          ${isCapturing
+            ? `<div class="capture-btns">
+                 <button class="btn-confirm" data-confirm="${action}">確定</button>
+                 <button class="btn-edit active" data-action="${action}">×</button>
+               </div>`
+            : `<button class="btn-edit" data-action="${action}">変更</button>`
+          }
         </td>`;
       tbody.appendChild(tr);
     });
 
     conflictBanner.classList.toggle('hidden', !conflicts());
-    saveBtn.disabled = conflicts();
   }
 
   // ---- リアクションスロット描画 ----
@@ -175,10 +182,28 @@
   }
 
   // ---- キーキャプチャ ----
-  function startCapture(action) { capturingAction = action; renderBindings(); }
-  function stopCapture()        { capturingAction = null;   renderBindings(); }
+  function startCapture(action) { capturingAction = action; captureBuffer = []; renderBindings(); }
+  function stopCapture()        { capturingAction = null;   captureBuffer = []; renderBindings(); }
+
+  function confirmCapture(action) {
+    if (!captureBuffer.length) { stopCapture(); return; }
+    current[action] = captureBuffer.join('');
+    captureBuffer = [];
+    capturingAction = null;
+    activePresetId = '';
+    renderBindings();
+    renderPresets();
+    if (!conflicts()) {
+      chrome.storage.sync.set({ keybindings: current }, () => {
+        saveBanner.classList.remove('hidden');
+        setTimeout(() => saveBanner.classList.add('hidden'), 2500);
+      });
+    }
+  }
 
   function handleEditClick(e) {
+    const confirm = e.target.closest('[data-confirm]');
+    if (confirm) { confirmCapture(confirm.dataset.confirm); return; }
     const btn = e.target.closest('.btn-edit');
     if (!btn) return;
     const action = btn.dataset.action;
@@ -189,12 +214,18 @@
     if (capturingAction) {
       e.preventDefault();
       e.stopPropagation();
-      if (e.key === 'Escape') { stopCapture(); return; }
-      current[capturingAction] = e.code.startsWith('Numpad') ? e.code : e.key;
-      capturingAction = null;
-      activePresetId = '';
+      if (e.key === 'Escape' && !e.ctrlKey && !e.altKey) { stopCapture(); return; }
+      // 純粋なモディファイアキーだけは無視
+      if (['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) return;
+      const mods = [];
+      if (e.ctrlKey) mods.push('Ctrl');
+      if (e.altKey)  mods.push('Alt');
+      const raw = e.code.startsWith('Numpad') ? e.code : e.key;
+      // Ctrl/Alt 付きはキーを小文字に正規化（Ctrl+I と Ctrl+Shift+I を同一視）
+      const base = mods.length && !e.code.startsWith('Numpad') ? raw.toLowerCase() : raw;
+      const part = mods.length ? [...mods, base].join('+') : base;
+      captureBuffer.push(part);
       renderBindings();
-      renderPresets();
     } else if (capturingReactionIdx !== null) {
       e.preventDefault();
       e.stopPropagation();
@@ -202,6 +233,10 @@
       reactionSlots[capturingReactionIdx].key = e.code;
       capturingReactionIdx = null;
       renderReactionSlots();
+      chrome.storage.sync.set({ reactionSlots }, () => {
+        reactionSaveBanner.classList.remove('hidden');
+        setTimeout(() => reactionSaveBanner.classList.add('hidden'), 2500);
+      });
     }
   }
 
@@ -219,20 +254,16 @@
     floatingPanelToggle.checked = currentSettings.showFloatingPanel;
   }
 
-  // ---- 保存 ----
-  function save() {
-    if (conflicts()) return;
-    chrome.storage.sync.set({ keybindings: current }, () => {
-      saveBanner.classList.remove('hidden');
-      setTimeout(() => saveBanner.classList.add('hidden'), 2500);
-    });
-  }
-
+  // ---- リセット ----
   function reset() {
     current = { ...DEFAULT_KEYBINDINGS };
     activePresetId = 'default';
     capturingAction = null;
     render();
+    chrome.storage.sync.set({ keybindings: current, activePresetId: 'default' }, () => {
+      saveBanner.classList.remove('hidden');
+      setTimeout(() => saveBanner.classList.add('hidden'), 2500);
+    });
   }
 
   // ---- イベント登録 ----
@@ -240,15 +271,22 @@
   floatingPanelToggle.addEventListener('change', saveSettings);
   tbody.addEventListener('click', handleEditClick);
   document.addEventListener('keydown', handleKeyCapture, true);
-  saveBtn.addEventListener('click', save);
   resetBtn.addEventListener('click', reset);
   presetSaveBtn.addEventListener('click', saveAsPreset);
   presetNameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveAsPreset(); });
 
+  let emojiSaveTimer = null;
   reactionBody.addEventListener('input', (e) => {
     const input = e.target.closest('.emoji-input');
     if (!input) return;
     reactionSlots[parseInt(input.dataset.slot)].emoji = input.value.trim();
+    clearTimeout(emojiSaveTimer);
+    emojiSaveTimer = setTimeout(() => {
+      chrome.storage.sync.set({ reactionSlots }, () => {
+        reactionSaveBanner.classList.remove('hidden');
+        setTimeout(() => reactionSaveBanner.classList.add('hidden'), 2500);
+      });
+    }, 800);
   });
   reactionBody.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-reaction-slot]');
@@ -258,12 +296,6 @@
     capturingAction = null;
     renderReactionSlots();
     renderBindings();
-  });
-  reactionSaveBtn.addEventListener('click', () => {
-    chrome.storage.sync.set({ reactionSlots }, () => {
-      reactionSaveBanner.classList.remove('hidden');
-      setTimeout(() => reactionSaveBanner.classList.add('hidden'), 2500);
-    });
   });
 
   // ---- タブ切り替え ----

@@ -1,12 +1,13 @@
 const InlineHints = (() => {
   const HINT_CLASS = 'krs-hint';
 
-  function keyLabel(key) {
-    const map = {
-      ArrowDown: '↓', ArrowUp: '↑', ArrowLeft: '←', ArrowRight: '→',
-      Enter: '↵', Escape: 'Esc', ' ': 'Spc',
-    };
-    return map[key] ?? key;
+  function keyLabel(binding) {
+    const map = { ArrowDown: '↓', ArrowUp: '↑', ArrowLeft: '←', ArrowRight: '→',
+                  Enter: '↵', Escape: 'Esc', ' ': 'Spc' };
+    const parts = (binding ?? '').split('+');
+    const base = parts[parts.length - 1];
+    const mods = parts.slice(0, -1);
+    return [...mods, map[base] ?? base].join('+');
   }
 
   function findReplyBtn(post) {
