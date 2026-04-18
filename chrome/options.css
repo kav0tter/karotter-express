@@ -592,6 +592,9 @@ kbd.conflict {
 }
 
 .footer-dot { color: var(--accent); font-size: 8px; }
+.footer-sep { color: var(--text-disabled); }
+.footer-link { color: var(--text-disabled); text-decoration: none; }
+.footer-link:hover { color: var(--text-primary); }
 
 /* ---- RESPONSIVE ---- */
 @media (max-width: 600px) {
