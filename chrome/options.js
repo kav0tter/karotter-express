@@ -143,6 +143,7 @@
     activePresetId = id;
     current = { ...DEFAULT_KEYBINDINGS, ...preset.bindings };
     capturingAction = null;
+    chrome.storage.sync.set({ activePresetId: id });
     render();
   }
 
@@ -262,6 +263,21 @@
     chrome.storage.sync.set({ reactionSlots }, () => {
       reactionSaveBanner.classList.remove('hidden');
       setTimeout(() => reactionSaveBanner.classList.add('hidden'), 2500);
+    });
+  });
+
+  // ---- タブ切り替え ----
+  const tabs = document.querySelectorAll('.tab');
+  const panels = document.querySelectorAll('.tab-panel');
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const target = tab.dataset.tab;
+      tabs.forEach((t) => t.classList.toggle('active', t === tab));
+      panels.forEach((p) => p.classList.toggle('active', p.dataset.panel === target));
+      capturingAction = null;
+      capturingReactionIdx = null;
+      renderBindings();
+      renderReactionSlots();
     });
   });
 
