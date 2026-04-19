@@ -272,14 +272,31 @@
     if (el) { el.focus(); el.select(); }
   }
 
-  const NAV_MAP = {
-    navHome:      SELECTORS.NAV_HOME,
-    navSearch:    SELECTORS.NAV_SEARCH,
-    navNotif:     SELECTORS.NAV_NOTIF,
-    navMessages:  SELECTORS.NAV_MESSAGES,
-    navBookmarks: SELECTORS.NAV_BOOKMARKS,
-    navProfile:   SELECTORS.NAV_PROFILE,
-    navSettings:  SELECTORS.NAV_SETTINGS,
+  const ACTION_HANDLERS = {
+    focusNext:    () => { refreshPosts(); setFocus(focusedIndex < 0 ? 0 : focusedIndex + 1); },
+    focusPrev:    () => { refreshPosts(); setFocus(focusedIndex < 0 ? 0 : focusedIndex - 1); },
+    openPost:     () => openFocusedPost(),
+    like:         () => clickInPost(SELECTORS.LIKE_BUTTON),
+    repost:       () => clickRepost(false),
+    quoteRepost:  () => clickRepost(true),
+    bookmark:     () => clickInPost(SELECTORS.BOOKMARK_BUTTON),
+    reply:        () => clickInPost(SELECTORS.REPLY_BUTTON),
+    openProfile:  () => openAuthorProfile(),
+    openQuoted:   () => openQuotedPost(),
+    newPost:      () => clickGlobal(SELECTORS.NEW_POST_BUTTON),
+    focusSearch:  () => focusSearch(),
+    toggleHelp:   () => HelpOverlay.toggle(bindings),
+    tabPrev:      () => switchTab('prev'),
+    tabNext:      () => switchTab('next'),
+    tabOuterPrev: () => switchOuterTab('prev'),
+    tabOuterNext: () => switchOuterTab('next'),
+    navHome:      () => clickGlobal(SELECTORS.NAV_HOME),
+    navSearch:    () => clickGlobal(SELECTORS.NAV_SEARCH),
+    navNotif:     () => clickGlobal(SELECTORS.NAV_NOTIF),
+    navMessages:  () => clickGlobal(SELECTORS.NAV_MESSAGES),
+    navBookmarks: () => clickGlobal(SELECTORS.NAV_BOOKMARKS),
+    navProfile:   () => clickGlobal(SELECTORS.NAV_PROFILE),
+    navSettings:  () => clickGlobal(SELECTORS.NAV_SETTINGS),
   };
 
   // ---- クイックリアクション ----
@@ -365,99 +382,10 @@
       return;
     }
 
-    if (keyMatches(e, 'focusNext')) {
-      e.preventDefault();
-      refreshPosts();
-      setFocus(focusedIndex < 0 ? 0 : focusedIndex + 1);
-      return;
-    }
-    if (keyMatches(e, 'focusPrev')) {
-      e.preventDefault();
-      refreshPosts();
-      setFocus(focusedIndex < 0 ? 0 : focusedIndex - 1);
-      return;
-    }
-    if (keyMatches(e, 'openPost')) {
-      e.preventDefault();
-      openFocusedPost();
-      return;
-    }
-    if (keyMatches(e, 'like')) {
-      e.preventDefault();
-      clickInPost(SELECTORS.LIKE_BUTTON);
-      return;
-    }
-    if (keyMatches(e, 'repost')) {
-      e.preventDefault();
-      clickRepost(false);
-      return;
-    }
-    if (keyMatches(e, 'quoteRepost')) {
-      e.preventDefault();
-      clickRepost(true);
-      return;
-    }
-    if (keyMatches(e, 'bookmark')) {
-      e.preventDefault();
-      clickInPost(SELECTORS.BOOKMARK_BUTTON);
-      return;
-    }
-    if (keyMatches(e, 'reply')) {
-      e.preventDefault();
-      clickInPost(SELECTORS.REPLY_BUTTON);
-      return;
-    }
-    if (keyMatches(e, 'openProfile')) {
-      e.preventDefault();
-      openAuthorProfile();
-      return;
-    }
-    if (keyMatches(e, 'openQuoted')) {
-      e.preventDefault();
-      openQuotedPost();
-      return;
-    }
-    if (keyMatches(e, 'newPost')) {
-      e.preventDefault();
-      clickGlobal(SELECTORS.NEW_POST_BUTTON);
-      return;
-    }
-    if (keyMatches(e, 'focusSearch')) {
-      e.preventDefault();
-      focusSearch();
-      return;
-    }
-    if (keyMatches(e, 'toggleHelp')) {
-      e.preventDefault();
-      HelpOverlay.toggle(bindings);
-      return;
-    }
-    if (keyMatches(e, 'tabPrev')) {
-      e.preventDefault();
-      switchTab('prev');
-      return;
-    }
-    if (keyMatches(e, 'tabNext')) {
-      e.preventDefault();
-      switchTab('next');
-      return;
-    }
-    if (keyMatches(e, 'tabOuterPrev')) {
-      e.preventDefault();
-      switchOuterTab('prev');
-      return;
-    }
-    if (keyMatches(e, 'tabOuterNext')) {
-      e.preventDefault();
-      switchOuterTab('next');
-      return;
-    }
-
-    // ナビゲーション（単打）
-    for (const [action, sel] of Object.entries(NAV_MAP)) {
+    for (const action of Object.keys(ACTION_HANDLERS)) {
       if (keyMatches(e, action)) {
         e.preventDefault();
-        clickGlobal(sel);
+        executeAction(action);
         return;
       }
     }
@@ -465,27 +393,7 @@
 
   // コード処理から呼ばれるアクション実行（単打と共通）
   function executeAction(action) {
-    switch (action) {
-      case 'focusNext':    refreshPosts(); setFocus(focusedIndex < 0 ? 0 : focusedIndex + 1); break;
-      case 'focusPrev':    refreshPosts(); setFocus(focusedIndex < 0 ? 0 : focusedIndex - 1); break;
-      case 'openPost':     openFocusedPost(); break;
-      case 'like':         clickInPost(SELECTORS.LIKE_BUTTON); break;
-      case 'repost':       clickRepost(false); break;
-      case 'quoteRepost':  clickRepost(true); break;
-      case 'bookmark':     clickInPost(SELECTORS.BOOKMARK_BUTTON); break;
-      case 'reply':        clickInPost(SELECTORS.REPLY_BUTTON); break;
-      case 'openProfile':  openAuthorProfile(); break;
-      case 'openQuoted':   openQuotedPost(); break;
-      case 'newPost':      clickGlobal(SELECTORS.NEW_POST_BUTTON); break;
-      case 'focusSearch':  focusSearch(); break;
-      case 'toggleHelp':   HelpOverlay.toggle(bindings); break;
-      case 'tabPrev':      switchTab('prev'); break;
-      case 'tabNext':      switchTab('next'); break;
-      case 'tabOuterPrev': switchOuterTab('prev'); break;
-      case 'tabOuterNext': switchOuterTab('next'); break;
-      default:
-        if (NAV_MAP[action]) clickGlobal(NAV_MAP[action]);
-    }
+    ACTION_HANDLERS[action]?.();
   }
 
   // ---- MutationObserver ----
