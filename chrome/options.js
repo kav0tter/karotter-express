@@ -136,7 +136,7 @@
     const preset = presets.find((p) => p.id === id);
     if (!preset) return;
     activePresetId = id;
-    current = { ...DEFAULT_KEYBINDINGS, ...preset.bindings };
+    current = { ...preset.bindings };
     capturingAction = null;
     chrome.storage.sync.set({ activePresetId: id });
     render();
@@ -182,7 +182,7 @@
     renderBindings();
     renderPresets();
     if (!conflicts()) {
-      chrome.storage.sync.set({ keybindings: current }, () => {
+      KarotterStorage.saveKeybindings(current, () => {
         saveBanner.classList.remove('hidden');
         setTimeout(() => saveBanner.classList.add('hidden'), 2500);
       });
@@ -221,7 +221,7 @@
       reactionSlots[capturingReactionIdx].key = e.code;
       capturingReactionIdx = null;
       renderReactionSlots();
-      chrome.storage.sync.set({ reactionSlots }, () => {
+      KarotterStorage.saveReactionSlots(reactionSlots, () => {
         reactionSaveBanner.classList.remove('hidden');
         setTimeout(() => reactionSaveBanner.classList.add('hidden'), 2500);
       });
@@ -234,7 +234,7 @@
       showInlineHints:   inlineHintsToggle.checked,
       showFloatingPanel: floatingPanelToggle.checked,
     };
-    chrome.storage.sync.set({ settings: currentSettings });
+    KarotterStorage.saveSettings(currentSettings);
   }
 
   function renderSettings() {
@@ -248,7 +248,8 @@
     activePresetId = 'default';
     capturingAction = null;
     render();
-    chrome.storage.sync.set({ keybindings: current, activePresetId: 'default' }, () => {
+    KarotterStorage.saveKeybindings(current, () => {
+      chrome.storage.sync.set({ activePresetId: 'default' });
       saveBanner.classList.remove('hidden');
       setTimeout(() => saveBanner.classList.add('hidden'), 2500);
     });
@@ -270,7 +271,7 @@
     reactionSlots[parseInt(input.dataset.slot)].emoji = input.value.trim();
     clearTimeout(emojiSaveTimer);
     emojiSaveTimer = setTimeout(() => {
-      chrome.storage.sync.set({ reactionSlots }, () => {
+      KarotterStorage.saveReactionSlots(reactionSlots, () => {
         reactionSaveBanner.classList.remove('hidden');
         setTimeout(() => reactionSaveBanner.classList.add('hidden'), 2500);
       });
@@ -302,13 +303,13 @@
   });
 
   // ---- 初期ロード ----
-  chrome.storage.sync.get(['keybindings', 'userPresets', 'activePresetId', 'settings', 'reactionSlots'], (result) => {
-    const userPresets = result.userPresets ?? [];
+  KarotterStorage.loadAll().then((result) => {
+    const userPresets = result.userPresets;
     presets = [...BUILTIN_PRESETS, ...userPresets];
-    activePresetId = result.activePresetId ?? 'default';
-    if (result.keybindings)    current = { ...DEFAULT_KEYBINDINGS, ...result.keybindings };
-    if (result.settings)       currentSettings = { ...DEFAULT_SETTINGS, ...result.settings };
-    if (result.reactionSlots)  reactionSlots = result.reactionSlots;
+    activePresetId = result.activePresetId;
+    current = result.keybindings;
+    currentSettings = result.settings;
+    reactionSlots = result.reactionSlots;
     render();
     renderSettings();
     renderReactionSlots();

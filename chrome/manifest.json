@@ -20,6 +20,7 @@
       "matches": ["https://karotter.com/*", "https://www.karotter.com/*", "https://karotter.jp/*", "https://www.karotter.jp/*", "https://karotter.karon.jp/*", "https://www.karotter.karon.jp/*"],
       "js": [
         "defaults.js",
+        "storage.js",
         "selectors.js",
         "key-format.js",
         "help-overlay.js",

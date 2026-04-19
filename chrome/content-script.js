@@ -13,23 +13,31 @@
   let chordTimer   = null;
 
   // ---- 初期化 ----
-  function init() {
-    loadBindings();
+  async function init() {
+    const all = await KarotterStorage.loadAll();
+    bindings = all.keybindings;
+    settings = all.settings;
+    reactionSlots = all.reactionSlots;
+    applySettings();
+
+    KarotterStorage.subscribe((patch) => {
+      if (patch.keybindings) {
+        bindings = patch.keybindings;
+        if (settings.showInlineHints) InlineHints.refresh(bindings);
+        if (settings.showFloatingPanel) FloatingPanel.refresh(bindings);
+      }
+      if (patch.settings) {
+        settings = patch.settings;
+        applySettings();
+      }
+      if (patch.reactionSlots) {
+        reactionSlots = patch.reactionSlots;
+      }
+    });
+
     window.addEventListener('keydown', handleKeyDown, true);
     observeTimeline();
     observeRouteChange();
-  }
-
-  function loadBindings() {
-    chrome.storage.sync.get(['keybindings', 'settings', 'reactionSlots'], (result) => {
-      if (result.keybindings)   bindings = { ...DEFAULT_KEYBINDINGS, ...result.keybindings };
-      if (result.settings)      settings = { ...DEFAULT_SETTINGS,   ...result.settings };
-      if (result.reactionSlots) reactionSlots = result.reactionSlots;
-      applySettings();
-    });
-    chrome.storage.onChanged.addListener((changes) => {
-      if (changes.reactionSlots) reactionSlots = changes.reactionSlots.newValue ?? [];
-    });
   }
 
   let hintsTimer = null;
@@ -58,18 +66,6 @@
       FloatingPanel.hide();
     }
   }
-
-  chrome.storage.onChanged.addListener((changes) => {
-    if (changes.keybindings) {
-      bindings = { ...DEFAULT_KEYBINDINGS, ...changes.keybindings.newValue };
-      if (settings.showInlineHints) InlineHints.refresh(bindings);
-      if (settings.showFloatingPanel) FloatingPanel.refresh(bindings);
-    }
-    if (changes.settings) {
-      settings = { ...DEFAULT_SETTINGS, ...changes.settings.newValue };
-      applySettings();
-    }
-  });
 
   // ---- 投稿リスト管理 ----
   function refreshPosts() {
