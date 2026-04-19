@@ -34,11 +34,16 @@
 
   function formatKeyLabel(binding, { compact = false } = {}) {
     if (!binding) return '';
-    const parts = String(binding).split('+').filter(Boolean);
+    const parts = String(binding).split('+');
     if (!parts.length) return '';
 
-    const base = parts[parts.length - 1];
-    const mods = parts.slice(0, -1).map(normalizeModifier);
+    let base = parts[parts.length - 1];
+    if (base === '') base = '+';
+
+    const mods = parts
+      .slice(0, -1)
+      .filter(Boolean)
+      .map(normalizeModifier);
     return [...mods, formatBaseKey(base, compact)].join('+');
   }
 
