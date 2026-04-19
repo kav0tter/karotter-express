@@ -17,30 +17,30 @@ const InlineHints = (() => {
   }
 
   function applyToPost(post, bindings) {
-    attachHint(post.querySelector(SELECTORS.LIKE_BUTTON),     'like',     bindings);
-    attachHint(post.querySelector(SELECTORS.REPOST_BUTTON),   'repost',   bindings);
-    attachHint(post.querySelector(SELECTORS.BOOKMARK_BUTTON), 'bookmark', bindings);
-    attachHint(DomHelpers.findReplyButton(post),               'reply',    bindings);
-    attachHint(post.querySelector(SELECTORS.QUOTED_POST),     'openQuoted', bindings);
+    attachHint(Selectors.queryLikeButton(post),      'like',       bindings);
+    attachHint(Selectors.queryRepostButton(post),    'repost',     bindings);
+    attachHint(Selectors.queryBookmarkButton(post),  'bookmark',   bindings);
+    attachHint(Selectors.queryReplyButton(post),     'reply',      bindings);
+    attachHint(Selectors.queryQuotedPost(post),      'openQuoted', bindings);
   }
 
   const NAV_ACTIONS = {
-    navHome:      SELECTORS.NAV_HOME,
-    navSearch:    SELECTORS.NAV_SEARCH,
-    navNotif:     SELECTORS.NAV_NOTIF,
-    navMessages:  SELECTORS.NAV_MESSAGES,
-    navBookmarks: SELECTORS.NAV_BOOKMARKS,
-    navProfile:   SELECTORS.NAV_PROFILE,
-    navSettings:  SELECTORS.NAV_SETTINGS,
+    navHome:      Selectors.queryNavHome,
+    navSearch:    Selectors.queryNavSearch,
+    navNotif:     Selectors.queryNavNotif,
+    navMessages:  Selectors.queryNavMessages,
+    navBookmarks: Selectors.queryNavBookmarks,
+    navProfile:   Selectors.queryNavProfile,
+    navSettings:  Selectors.queryNavSettings,
   };
 
   function applyToNav(bindings) {
-    for (const [action, sel] of Object.entries(NAV_ACTIONS)) {
-      const el = document.querySelector(sel);
+    for (const [action, queryFn] of Object.entries(NAV_ACTIONS)) {
+      const el = queryFn(document);
       if (el) attachHint(el, action, bindings);
     }
     // 新規投稿ボタン
-    const newPostBtn = document.querySelector(SELECTORS.NEW_POST_BUTTON);
+    const newPostBtn = Selectors.queryNewPostButton(document);
     if (newPostBtn) attachHint(newPostBtn, 'newPost', bindings);
   }
 
@@ -69,7 +69,7 @@ const InlineHints = (() => {
   }
 
   function applyAll(bindings) {
-    document.querySelectorAll(SELECTORS.POST_ITEM).forEach(p => applyToPost(p, bindings));
+    Selectors.queryPostItems().forEach(p => applyToPost(p, bindings));
     applyToNav(bindings);
     applyToTabs(bindings);
   }

@@ -37,7 +37,7 @@
     if (!settings.showInlineHints) return;
     clearTimeout(hintsTimer);
     hintsTimer = setTimeout(() => {
-      const found = SELECTORS.POST_ITEM_VARIANTS.some(s => document.querySelector(s));
+      const found = Selectors.queryPostItems().length > 0;
       if (found) {
         InlineHints.applyAll(bindings);
       } else {
@@ -73,11 +73,7 @@
 
   // ---- 投稿リスト管理 ----
   function refreshPosts() {
-    for (const sel of SELECTORS.POST_ITEM_VARIANTS) {
-      const items = Array.from(document.querySelectorAll(sel));
-      if (items.length > 0) { posts = items; return; }
-    }
-    posts = [];
+    posts = Selectors.queryPostItems();
   }
 
   function setFocus(index) {
@@ -144,20 +140,16 @@
   }
 
   // ---- アクション実行 ----
-  function clickInPost(selector) {
+  function clickInPost(queryFn, label) {
     if (focusedIndex < 0 || !posts[focusedIndex]) return;
     const post = posts[focusedIndex];
-    const btn = selector === SELECTORS.REPLY_BUTTON
-      ? DomHelpers.findReplyButton(post)
-      : post.querySelector(selector);
+    const btn = queryFn(post);
     if (btn) {
       btn.click();
     } else {
-      console.warn(`[karotter-shortcut] ボタンが見つかりません: ${selector}`);
+      console.warn(`[karotter-shortcut] ボタンが見つかりません: ${label}`);
     }
   }
-
-
 
   function openFocusedPost() {
     if (focusedIndex < 0 || !posts[focusedIndex]) return;
@@ -182,7 +174,7 @@
 
   function openQuotedPost() {
     if (focusedIndex < 0 || !posts[focusedIndex]) return;
-    const quoted = posts[focusedIndex].querySelector(SELECTORS.QUOTED_POST);
+    const quoted = Selectors.queryQuotedPost(posts[focusedIndex]);
     if (quoted) quoted.click();
   }
 
@@ -191,7 +183,7 @@
   // isQuote=true  → 2番目のボタン（引用）
   function clickRepost(isQuote) {
     if (focusedIndex < 0 || !posts[focusedIndex]) return;
-    const repostBtn = posts[focusedIndex].querySelector(SELECTORS.REPOST_BUTTON);
+    const repostBtn = Selectors.queryRepostButton(posts[focusedIndex]);
     if (!repostBtn) return;
 
     const obs = new MutationObserver((muts) => {
@@ -212,12 +204,10 @@
     setTimeout(() => obs.disconnect(), 1000);
   }
 
-  function clickGlobal(selector) {
-    const el = document.querySelector(selector);
+  function clickGlobal(queryFn, fallbackHref) {
+    const el = queryFn(document);
     if (el) { el.click(); return; }
-    // メニュー内など非表示リンクは href から直接ナビゲート
-    const m = selector.match(/^a\[href="([^"]+)"\]$/);
-    if (m) location.assign(m[1]);
+    if (fallbackHref) location.assign(fallbackHref);
   }
 
 
@@ -249,7 +239,7 @@
   }
 
   function focusSearch() {
-    const el = document.querySelector(SELECTORS.SEARCH_INPUT);
+    const el = Selectors.querySearchInput(document);
     if (el) { el.focus(); el.select(); }
   }
 
@@ -257,27 +247,27 @@
     focusNext:    () => { refreshPosts(); setFocus(focusedIndex < 0 ? 0 : focusedIndex + 1); },
     focusPrev:    () => { refreshPosts(); setFocus(focusedIndex < 0 ? 0 : focusedIndex - 1); },
     openPost:     () => openFocusedPost(),
-    like:         () => clickInPost(SELECTORS.LIKE_BUTTON),
+    like:         () => clickInPost(Selectors.queryLikeButton,     'like'),
     repost:       () => clickRepost(false),
     quoteRepost:  () => clickRepost(true),
-    bookmark:     () => clickInPost(SELECTORS.BOOKMARK_BUTTON),
-    reply:        () => clickInPost(SELECTORS.REPLY_BUTTON),
+    bookmark:     () => clickInPost(Selectors.queryBookmarkButton, 'bookmark'),
+    reply:        () => clickInPost(Selectors.queryReplyButton,    'reply'),
     openProfile:  () => openAuthorProfile(),
     openQuoted:   () => openQuotedPost(),
-    newPost:      () => clickGlobal(SELECTORS.NEW_POST_BUTTON),
+    newPost:      () => clickGlobal(Selectors.queryNewPostButton),
     focusSearch:  () => focusSearch(),
     toggleHelp:   () => HelpOverlay.toggle(bindings),
     tabPrev:      () => switchTab('prev'),
     tabNext:      () => switchTab('next'),
     tabOuterPrev: () => switchOuterTab('prev'),
     tabOuterNext: () => switchOuterTab('next'),
-    navHome:      () => clickGlobal(SELECTORS.NAV_HOME),
-    navSearch:    () => clickGlobal(SELECTORS.NAV_SEARCH),
-    navNotif:     () => clickGlobal(SELECTORS.NAV_NOTIF),
-    navMessages:  () => clickGlobal(SELECTORS.NAV_MESSAGES),
-    navBookmarks: () => clickGlobal(SELECTORS.NAV_BOOKMARKS),
-    navProfile:   () => clickGlobal(SELECTORS.NAV_PROFILE),
-    navSettings:  () => clickGlobal(SELECTORS.NAV_SETTINGS),
+    navHome:      () => clickGlobal(Selectors.queryNavHome,      '/'),
+    navSearch:    () => clickGlobal(Selectors.queryNavSearch,    '/search'),
+    navNotif:     () => clickGlobal(Selectors.queryNavNotif,     '/notifications'),
+    navMessages:  () => clickGlobal(Selectors.queryNavMessages,  '/dm'),
+    navBookmarks: () => clickGlobal(Selectors.queryNavBookmarks, '/bookmarks'),
+    navProfile:   () => clickGlobal(Selectors.queryNavProfile),
+    navSettings:  () => clickGlobal(Selectors.queryNavSettings,  '/settings'),
   };
 
   // ---- クイックリアクション ----
@@ -379,7 +369,7 @@
 
   // ---- MutationObserver ----
   function observeTimeline() {
-    const container = document.querySelector(SELECTORS.TIMELINE_CONTAINER) ?? document.body;
+    const container = Selectors.queryTimelineContainer(document) ?? document.body;
     new MutationObserver((mutations) => {
       const hasReal = mutations.some(m =>
         [...m.addedNodes].some(n =>
