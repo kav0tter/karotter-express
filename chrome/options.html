@@ -67,7 +67,11 @@
           </table>
           <div class="actions">
             <button id="reset-btn" class="btn secondary">デフォルトに戻す</button>
+            <button id="export-btn" class="btn secondary">エクスポート</button>
+            <button id="import-btn" class="btn secondary">インポート</button>
           </div>
+          <input id="import-file-input" type="file" accept="application/json,.json" hidden />
+          <div id="import-warning-banner" class="banner error hidden"></div>
           <div id="save-banner" class="banner success hidden">[ SAVED ] 設定を保存しました。</div>
         </section>
       </div>
