@@ -1,0 +1,40 @@
+{
+  "manifest_version": 2,
+  "name": "karotter Express",
+  "version": "1.0.0",
+  "description": "karotter.com を高速操作できるキーボードショートカット拡張機能。Vim 風、Twitter 風プリセット、カスタマイズ可能なキーバインド。",
+  "icons": {
+    "16":  "icons/icon16.png",
+    "48":  "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "karotter-shortcuts@szk27",
+      "strict_min_version": "109.0"
+    }
+  },
+  "permissions": ["storage"],
+  "sidebar_action": {
+    "default_panel": "options.html",
+    "default_title": "karotter Express 設定",
+    "default_icon": "icons/icon48.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://karotter.com/*", "https://www.karotter.com/*", "https://karotter.jp/*", "https://www.karotter.jp/*", "https://karotter.karon.jp/*", "https://www.karotter.karon.jp/*"],
+      "js": [
+        "polyfill.js",
+        "defaults.js",
+        "selectors.js",
+        "help-overlay.js",
+        "inline-hints.js",
+        "floating-panel.js",
+        "page-reaction.js",
+        "content-script.js"
+      ],
+      "css": ["help-overlay.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

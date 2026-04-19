@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>karotter Express — 設定</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Doto:wght@400;700&family=Space+Grotesk:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <script src="polyfill.js"></script>
+  <div class="container">
+    <header class="hero">
+      <div class="hero-kicker">KAROTTER / EXPRESS</div>
+      <h1 class="hero-title">Settings<span class="hero-dot">.</span></h1>
+      <div class="hero-meta">
+        <span>KEYBOARD · REACTIONS · PRESETS</span>
+      </div>
+    </header>
+
+    <nav class="tabs" role="tablist">
+      <button class="tab active" role="tab" data-tab="keybindings">
+        <span class="tab-num">01</span><span class="tab-name">Keybindings</span>
+      </button>
+      <button class="tab" role="tab" data-tab="reactions">
+        <span class="tab-num">02</span><span class="tab-name">Reactions</span>
+      </button>
+      <button class="tab" role="tab" data-tab="display">
+        <span class="tab-num">03</span><span class="tab-name">Display</span>
+      </button>
+    </nav>
+
+    <main>
+      <!-- キーバインドタブ(プリセット統合) -->
+      <div class="tab-panel active" data-panel="keybindings">
+        <section class="preset-section">
+          <div class="section-head">
+            <h2 class="section-title">Presets</h2>
+            <span class="section-idx">/ 001</span>
+          </div>
+          <p class="section-desc">プリセットを選択すると、下のキーバインドが即座に切り替わります。</p>
+          <div id="preset-list"></div>
+          <div class="preset-save-row">
+            <input id="preset-name-input" type="text" placeholder="新しいプリセット名..." maxlength="30">
+            <button id="preset-save-btn" class="btn secondary small">現在の設定を保存</button>
+          </div>
+        </section>
+
+        <section>
+          <div class="section-head">
+            <h2 class="section-title">Keybindings</h2>
+            <span class="section-idx">/ 002</span>
+          </div>
+          <div id="conflict-banner" class="banner error hidden">
+            同じキーが複数のアクションに割り当てられています。修正してください。
+          </div>
+          <table id="bindings-table">
+            <thead>
+              <tr>
+                <th>Action</th>
+                <th>Key</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="bindings-body"></tbody>
+          </table>
+          <div class="actions">
+            <button id="reset-btn" class="btn secondary">デフォルトに戻す</button>
+          </div>
+          <div id="save-banner" class="banner success hidden">[ SAVED ] 設定を保存しました。</div>
+        </section>
+      </div>
+
+      <!-- クイックリアクションタブ -->
+      <div class="tab-panel" data-panel="reactions">
+        <section>
+          <div class="section-head">
+            <h2 class="section-title">Quick Reactions</h2>
+            <span class="section-idx">/ 003</span>
+          </div>
+          <p class="section-desc">投稿にフォーカス中、割り当てたキーで即座にリアクションできます。絵文字を入力してキーを割り当ててください。</p>
+          <table id="reaction-table">
+            <thead>
+              <tr>
+                <th>Slot</th>
+                <th>Emoji</th>
+                <th>Key</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="reaction-body"></tbody>
+          </table>
+          <div id="reaction-save-banner" class="banner success hidden">[ SAVED ] 設定を保存しました。</div>
+        </section>
+      </div>
+
+      <!-- 表示タブ -->
+      <div class="tab-panel" data-panel="display">
+        <section>
+          <div class="section-head">
+            <h2 class="section-title">Display</h2>
+            <span class="section-idx">/ 004</span>
+          </div>
+          <div class="toggle-list">
+            <label class="toggle-row">
+              <div class="toggle-info">
+                <span class="toggle-label">インラインヒント</span>
+                <span class="toggle-desc">各投稿のボタン上にショートカットキーを表示します</span>
+              </div>
+              <input type="checkbox" id="toggle-inline-hints" class="toggle-checkbox">
+              <span class="toggle-switch"></span>
+            </label>
+            <label class="toggle-row">
+              <div class="toggle-info">
+                <span class="toggle-label">フローティングパネル</span>
+                <span class="toggle-desc">画面右下にキー一覧を常時表示します</span>
+              </div>
+              <input type="checkbox" id="toggle-floating-panel" class="toggle-checkbox">
+              <span class="toggle-switch"></span>
+            </label>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <span>KAROTTER EXPRESS</span>
+      <span class="footer-dot">●</span>
+      <span class="footer-sep">—</span>
+      <span>developed by <a class="footer-link" href="https://karotter.com/profile/v0" target="_blank">@v0</a></span>
+    </footer>
+  </div>
+
+  <script src="defaults.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>
