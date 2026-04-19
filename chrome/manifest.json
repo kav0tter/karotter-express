@@ -21,6 +21,7 @@
       "js": [
         "defaults.js",
         "selectors.js",
+        "key-format.js",
         "help-overlay.js",
         "inline-hints.js",
         "floating-panel.js",

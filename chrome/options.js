@@ -24,18 +24,6 @@
   const reactionSaveBanner = document.getElementById('reaction-save-banner');
 
   // ---- ユーティリティ ----
-  const KEY_DISPLAY = { ArrowDown: '↓', ArrowUp: '↑', ArrowLeft: '←', ArrowRight: '→',
-                        Enter: 'Enter', Escape: 'Esc', ' ': 'Space' };
-
-  function keyLabel(binding) {
-    if (!binding) return '';
-    const parts = binding.split('+');
-    const base = parts[parts.length - 1];
-    const mods = parts.slice(0, -1);
-    const numpad = base.match(/^Numpad(\w+)$/);
-    const baseStr = KEY_DISPLAY[base] ?? (numpad ? `テンキー${numpad[1]}` : base);
-    return [...mods, baseStr].join('+');
-  }
 
   function conflicts() {
     const vals = Object.values(current);
@@ -98,7 +86,7 @@
         <td class="action-name">${label}</td>
         <td class="key-cell">
           <kbd class="${isCapturing ? 'capturing' : ''} ${isConflict && !isCapturing ? 'conflict' : ''}">
-            ${isCapturing ? bufLabel : keyLabel(key)}
+            ${isCapturing ? bufLabel : formatKeyLabel(key)}
           </kbd>
         </td>
         <td class="edit-cell">
@@ -127,7 +115,7 @@
         <td><input type="text" class="emoji-input" data-slot="${i}"
                    value="${slot.emoji}" placeholder="—" maxlength="8"></td>
         <td class="key-cell">
-          <kbd class="${isCapturing ? 'capturing' : ''}">${isCapturing ? '…' : keyLabel(slot.key)}</kbd>
+          <kbd class="${isCapturing ? 'capturing' : ''}">${isCapturing ? '…' : formatKeyLabel(slot.key)}</kbd>
         </td>
         <td class="edit-cell">
           <button class="btn-edit ${isCapturing ? 'active' : ''}" data-reaction-slot="${i}">
