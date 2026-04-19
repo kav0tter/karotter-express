@@ -22,10 +22,23 @@
   const presetSaveBtn = document.getElementById('preset-save-btn');
   const reactionBody = document.getElementById('reaction-body');
   const reactionSaveBanner = document.getElementById('reaction-save-banner');
+  const captureStatus = document.getElementById('capture-status');
   const exportBtn = document.getElementById('export-btn');
   const importBtn = document.getElementById('import-btn');
   const importFileInput = document.getElementById('import-file-input');
   const importWarningBanner = document.getElementById('import-warning-banner');
+
+  function announceCaptureStatus(message) {
+    if (!captureStatus || !message) return;
+    captureStatus.textContent = '';
+    requestAnimationFrame(() => {
+      captureStatus.textContent = message;
+    });
+  }
+
+  function getActionLabel(action) {
+    return ACTION_LABELS[action] || action;
+  }
 
   // ---- ユーティリティ ----
 
@@ -86,10 +99,11 @@
 
       const bufLabel = captureBuffer.length ? captureBuffer.join('') : '…';
       const tr = document.createElement('tr');
+      const stateAttr = isCapturing ? 'aria-busy="true" data-state="capturing"' : 'aria-busy="false" data-state="idle"';
       tr.innerHTML = `
         <td class="action-name">${label}</td>
         <td class="key-cell">
-          <kbd class="${isCapturing ? 'capturing' : ''} ${isConflict && !isCapturing ? 'conflict' : ''}">
+          <kbd ${stateAttr} class="${isCapturing ? 'capturing' : ''} ${isConflict && !isCapturing ? 'conflict' : ''}">
             ${isCapturing ? bufLabel : formatKeyLabel(key)}
           </kbd>
         </td>
@@ -113,13 +127,14 @@
     reactionBody.innerHTML = '';
     reactionSlots.forEach((slot, i) => {
       const isCapturing = capturingReactionIdx === i;
+      const stateAttr = isCapturing ? 'aria-busy="true" data-state="capturing"' : 'aria-busy="false" data-state="idle"';
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td class="action-name">${i + 1}</td>
         <td><input type="text" class="emoji-input" data-slot="${i}"
                    value="${slot.emoji}" placeholder="—" maxlength="8"></td>
         <td class="key-cell">
-          <kbd class="${isCapturing ? 'capturing' : ''}">${isCapturing ? '…' : formatKeyLabel(slot.key)}</kbd>
+          <kbd ${stateAttr} class="${isCapturing ? 'capturing' : ''}">${isCapturing ? '…' : formatKeyLabel(slot.key)}</kbd>
         </td>
         <td class="edit-cell">
           <button class="btn-edit ${isCapturing ? 'active' : ''}" data-reaction-slot="${i}">
@@ -335,12 +350,25 @@
   }
 
   // ---- キーキャプチャ ----
-  function startCapture(action) { capturingAction = action; captureBuffer = []; renderBindings(); }
-  function stopCapture()        { capturingAction = null;   captureBuffer = []; renderBindings(); }
+  function startCapture(action) {
+    capturingAction = action;
+    captureBuffer = [];
+    announceCaptureStatus(`${getActionLabel(action)} のキー収録を開始しました`);
+    renderBindings();
+  }
+  function stopCapture() {
+    if (capturingAction) {
+      announceCaptureStatus(`${getActionLabel(capturingAction)} のキー収録をキャンセルしました`);
+    }
+    capturingAction = null;
+    captureBuffer = [];
+    renderBindings();
+  }
 
   function confirmCapture(action) {
     if (!captureBuffer.length) { stopCapture(); return; }
     current[action] = captureBuffer.join('');
+    announceCaptureStatus(`${getActionLabel(action)} のキー収録を確定しました`);
     captureBuffer = [];
     capturingAction = null;
     activePresetId = '';
@@ -465,11 +493,20 @@
   tabs.forEach((tab) => {
     tab.addEventListener('click', () => {
       const target = tab.dataset.tab;
-      tabs.forEach((t) => t.classList.toggle('active', t === tab));
-      panels.forEach((p) => p.classList.toggle('active', p.dataset.panel === target));
-      capturingAction = null;
+      const hadKeyCapture = Boolean(capturingAction);
+      tabs.forEach((t) => {
+        const isActive = t === tab;
+        t.classList.toggle('active', isActive);
+        t.setAttribute('aria-selected', String(isActive));
+      });
+      panels.forEach((p) => {
+        const isActive = p.dataset.panel === target;
+        p.classList.toggle('active', isActive);
+        p.hidden = !isActive;
+      });
+      if (hadKeyCapture) stopCapture();
       capturingReactionIdx = null;
-      renderBindings();
+      if (!hadKeyCapture) renderBindings();
       renderReactionSlots();
     });
   });
