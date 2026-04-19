@@ -1,18 +1,6 @@
 const InlineHints = (() => {
   const HINT_CLASS = 'krs-hint';
 
-  function findReplyBtn(post) {
-    const reaction = post.querySelector('.reaction-trigger');
-    if (reaction) {
-      let el = reaction.nextElementSibling;
-      while (el) {
-        if (el.tagName === 'BUTTON') return el;
-        el = el.nextElementSibling;
-      }
-    }
-    return post.querySelector(SELECTORS.REPLY_BUTTON);
-  }
-
   function attachHint(btn, action, bindings) {
     if (!btn) return;
     const key = bindings[action];
@@ -32,7 +20,7 @@ const InlineHints = (() => {
     attachHint(post.querySelector(SELECTORS.LIKE_BUTTON),     'like',     bindings);
     attachHint(post.querySelector(SELECTORS.REPOST_BUTTON),   'repost',   bindings);
     attachHint(post.querySelector(SELECTORS.BOOKMARK_BUTTON), 'bookmark', bindings);
-    attachHint(findReplyBtn(post),                             'reply',    bindings);
+    attachHint(DomHelpers.findReplyButton(post),               'reply',    bindings);
     attachHint(post.querySelector(SELECTORS.QUOTED_POST),     'openQuoted', bindings);
   }
 
@@ -57,8 +45,7 @@ const InlineHints = (() => {
   }
 
   function applyToTabs(bindings) {
-    const containers = [...document.querySelectorAll('[class*="rounded-full"][class*="border"]')]
-      .filter(c => [...c.querySelectorAll('button')].filter(b => b.offsetParent).length >= 2);
+    const containers = DomHelpers.getTabContainers();
     const pairs = [
       ['tabOuterPrev', 'tabOuterNext'],
       ['tabPrev',      'tabNext'],

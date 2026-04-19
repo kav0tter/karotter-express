@@ -148,7 +148,7 @@
     if (focusedIndex < 0 || !posts[focusedIndex]) return;
     const post = posts[focusedIndex];
     const btn = selector === SELECTORS.REPLY_BUTTON
-      ? findReplyButton(post)
+      ? DomHelpers.findReplyButton(post)
       : post.querySelector(selector);
     if (btn) {
       btn.click();
@@ -157,20 +157,7 @@
     }
   }
 
-  // リプライボタンは reaction-trigger の直後のボタンを使う
-  // （画像付き投稿でも -ml-1 クラスの有無に左右されない）
-  function findReplyButton(post) {
-    const reaction = post.querySelector('.reaction-trigger');
-    if (reaction) {
-      let el = reaction.nextElementSibling;
-      while (el) {
-        if (el.tagName === 'BUTTON') return el;
-        el = el.nextElementSibling;
-      }
-    }
-    // フォールバック: 元のセレクタ
-    return post.querySelector(SELECTORS.REPLY_BUTTON);
-  }
+
 
   function openFocusedPost() {
     if (focusedIndex < 0 || !posts[focusedIndex]) return;
@@ -233,17 +220,11 @@
     if (m) location.assign(m[1]);
   }
 
-  function getTabContainers() {
-    return [...document.querySelectorAll('[class*="rounded-full"][class*="border"]')]
-      .filter(c => {
-        const btns = [...c.querySelectorAll('button')].filter(b => b.offsetParent !== null);
-        return btns.length >= 2;
-      });
-  }
+
 
   function clickTabInContainers(containers, direction) {
     for (const container of containers) {
-      const btns = [...container.querySelectorAll('button')].filter(b => b.offsetParent !== null);
+      const btns = DomHelpers.findVisibleButtons(container);
       const activeIdx = btns.findIndex(b =>
         b.className.includes('accent-soft') || b.className.includes('shadow-sm')
       );
@@ -257,13 +238,13 @@
 
   // [/] → 中段タブ（2番目のグループのみ。なければ外側）
   function switchTab(direction) {
-    const all = getTabContainers();
+    const all = DomHelpers.getTabContainers();
     clickTabInContainers(all.length >= 2 ? [all[1]] : all, direction);
   }
 
   // {/} → 外側タブ（最初のグループのみ）
   function switchOuterTab(direction) {
-    const all = getTabContainers();
+    const all = DomHelpers.getTabContainers();
     clickTabInContainers(all.slice(0, 1), direction);
   }
 
