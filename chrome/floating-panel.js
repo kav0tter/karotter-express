@@ -1,5 +1,7 @@
 const FloatingPanel = (() => {
   let host = null;
+  let shadowRoot = null;
+  let focusStatus = { current: null, total: 0 };
 
   function buildStyle() {
     return `
@@ -47,6 +49,15 @@ const FloatingPanel = (() => {
         border: 1px solid var(--border-soft);
         border-radius: 5px; font-family: monospace; font-size: 11px;
         color: var(--accent);
+      }
+      #focus-status {
+        margin-bottom: 8px;
+        padding: 6px 8px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        background: var(--surface-soft);
+        color: var(--text-secondary);
       }`;
   }
 
@@ -68,6 +79,7 @@ const FloatingPanel = (() => {
     host = document.createElement('div');
     host.id = 'krs-floating-host';
     const shadow = host.attachShadow({ mode: 'closed' });
+    shadowRoot = shadow;
 
     const style = document.createElement('style');
     style.textContent = buildStyle();
@@ -76,7 +88,10 @@ const FloatingPanel = (() => {
     const wrap = document.createElement('div');
     wrap.id = 'wrap';
     wrap.innerHTML = `
-      <div id="panel" ${panelExpanded ? '' : 'style="display:none"'}>${buildPanelHTML(bindings)}</div>
+      <div id="panel" ${panelExpanded ? '' : 'style="display:none"'}>
+        <div id="focus-status"></div>
+        ${buildPanelHTML(bindings)}
+      </div>
       <button id="toggle" title="ショートカット一覧">?</button>`;
     shadow.appendChild(wrap);
 
@@ -87,6 +102,7 @@ const FloatingPanel = (() => {
     });
 
     document.body.appendChild(host);
+    setFocusStatus(focusStatus.current, focusStatus.total);
   }
 
   function show(bindings) {
@@ -95,14 +111,30 @@ const FloatingPanel = (() => {
   }
 
   function hide() {
-    if (host) { host.remove(); host = null; }
+    if (host) { host.remove(); host = null; shadowRoot = null; }
   }
 
   function refresh(bindings) {
     if (host) show(bindings);
   }
 
+  function formatStatus(current, total) {
+    const currentLabel = Number.isInteger(current) && current > 0 ? current : '-';
+    return `Post ${currentLabel} / ${total}`;
+  }
+
+  function setFocusStatus(current, total) {
+    focusStatus = {
+      current: Number.isInteger(current) ? current : null,
+      total: Number.isInteger(total) && total >= 0 ? total : 0,
+    };
+    if (!host) return;
+    const statusEl = shadowRoot?.getElementById('focus-status');
+    if (!statusEl) return;
+    statusEl.textContent = formatStatus(focusStatus.current, focusStatus.total);
+  }
+
   function isVisible() { return !!host; }
 
-  return { show, hide, refresh, isVisible };
+  return { show, hide, refresh, setFocusStatus, isVisible };
 })();

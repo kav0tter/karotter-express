@@ -12,6 +12,7 @@
 
   const inlineHintsToggle   = document.getElementById('toggle-inline-hints');
   const floatingPanelToggle = document.getElementById('toggle-floating-panel');
+  const focusStatusBadgeToggle = document.getElementById('toggle-focus-status-badge');
 
   const tbody         = document.getElementById('bindings-body');
   const resetBtn      = document.getElementById('reset-btn');
@@ -233,6 +234,7 @@
     currentSettings = {
       showInlineHints:   inlineHintsToggle.checked,
       showFloatingPanel: floatingPanelToggle.checked,
+      showFocusStatusBadge: focusStatusBadgeToggle.checked,
     };
     KarotterStorage.saveSettings(currentSettings);
   }
@@ -240,6 +242,7 @@
   function renderSettings() {
     inlineHintsToggle.checked   = currentSettings.showInlineHints;
     floatingPanelToggle.checked = currentSettings.showFloatingPanel;
+    focusStatusBadgeToggle.checked = currentSettings.showFocusStatusBadge;
   }
 
   // ---- リセット ----
@@ -258,6 +261,7 @@
   // ---- イベント登録 ----
   inlineHintsToggle.addEventListener('change', saveSettings);
   floatingPanelToggle.addEventListener('change', saveSettings);
+  focusStatusBadgeToggle.addEventListener('change', saveSettings);
   tbody.addEventListener('click', handleEditClick);
   document.addEventListener('keydown', handleKeyCapture, true);
   resetBtn.addEventListener('click', reset);

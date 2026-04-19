@@ -65,11 +65,19 @@
     } else {
       FloatingPanel.hide();
     }
+    if (!settings.showFloatingPanel && settings.showFocusStatusBadge) {
+      FocusStatusBadge.show();
+    } else {
+      FocusStatusBadge.hide();
+    }
+    updateFocusStatus();
   }
 
   // ---- 投稿リスト管理 ----
   function refreshPosts() {
     posts = Selectors.queryPostItems();
+    syncFocusedIndex();
+    updateFocusStatus();
   }
 
   function setFocus(index) {
@@ -85,6 +93,7 @@
     if (rect.top < 60 || rect.bottom > viewH - 20) {
       target.scrollIntoView({ block: 'center', behavior: 'instant' });
     }
+    updateFocusStatus();
   }
 
   function clearFocus() {
@@ -92,6 +101,22 @@
       posts[focusedIndex].classList.remove(FOCUS_CLASS);
     }
     focusedIndex = -1;
+    updateFocusStatus();
+  }
+
+  function syncFocusedIndex() {
+    if (focusedIndex < 0) return;
+    const current = posts[focusedIndex];
+    if (current?.classList?.contains(FOCUS_CLASS)) return;
+    const nextIndex = posts.findIndex((post) => post.classList?.contains(FOCUS_CLASS));
+    focusedIndex = nextIndex;
+  }
+
+  function updateFocusStatus() {
+    const current = focusedIndex >= 0 && posts[focusedIndex] ? focusedIndex + 1 : null;
+    const total = posts.length;
+    FloatingPanel.setFocusStatus(current, total);
+    FocusStatusBadge.setStatus(current, total);
   }
 
   // ---- 入力中チェック ----
