@@ -25,8 +25,11 @@
       "matches": ["https://karotter.com/*", "https://www.karotter.com/*", "https://karotter.jp/*", "https://www.karotter.jp/*", "https://karotter.karon.jp/*", "https://www.karotter.karon.jp/*"],
       "js": [
         "defaults.js",
+        "storage.js",
         "selectors.js",
         "help-overlay.js",
+        "inline-hints.js",
+        "floating-panel.js",
         "content-script.js"
       ],
       "css": ["help-overlay.css"],
