@@ -19,21 +19,22 @@
       </div>
     </header>
 
-    <nav class="tabs" role="tablist">
-      <button class="tab active" role="tab" data-tab="keybindings">
+    <nav class="tabs" role="tablist" aria-label="設定タブ">
+      <button class="tab active" role="tab" id="tab-keybindings" aria-controls="panel-keybindings" aria-selected="true" data-tab="keybindings">
         <span class="tab-num">01</span><span class="tab-name">Keybindings</span>
       </button>
-      <button class="tab" role="tab" data-tab="reactions">
+      <button class="tab" role="tab" id="tab-reactions" aria-controls="panel-reactions" aria-selected="false" data-tab="reactions">
         <span class="tab-num">02</span><span class="tab-name">Reactions</span>
       </button>
-      <button class="tab" role="tab" data-tab="display">
+      <button class="tab" role="tab" id="tab-display" aria-controls="panel-display" aria-selected="false" data-tab="display">
         <span class="tab-num">03</span><span class="tab-name">Display</span>
       </button>
     </nav>
 
     <main>
+      <p id="capture-status" class="visually-hidden" aria-live="polite" aria-atomic="true"></p>
       <!-- キーバインドタブ(プリセット統合) -->
-      <div class="tab-panel active" data-panel="keybindings">
+      <div class="tab-panel active" role="tabpanel" id="panel-keybindings" aria-labelledby="tab-keybindings" data-panel="keybindings">
         <section class="preset-section">
           <div class="section-head">
             <h2 class="section-title">Presets</h2>
@@ -73,7 +74,7 @@
       </div>
 
       <!-- クイックリアクションタブ -->
-      <div class="tab-panel" data-panel="reactions">
+      <div class="tab-panel" role="tabpanel" id="panel-reactions" aria-labelledby="tab-reactions" data-panel="reactions" hidden>
         <section>
           <div class="section-head">
             <h2 class="section-title">Quick Reactions</h2>
@@ -96,7 +97,7 @@
       </div>
 
       <!-- 表示タブ -->
-      <div class="tab-panel" data-panel="display">
+      <div class="tab-panel" role="tabpanel" id="panel-display" aria-labelledby="tab-display" data-panel="display" hidden>
         <section>
           <div class="section-head">
             <h2 class="section-title">Display</h2>
