@@ -23,6 +23,7 @@
         "selectors.js",
         "key-format.js",
         "help-overlay.js",
+        "dom-helpers.js",
         "inline-hints.js",
         "floating-panel.js",
         "content-script.js"
