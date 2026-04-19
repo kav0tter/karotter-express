@@ -22,6 +22,10 @@
   const presetSaveBtn = document.getElementById('preset-save-btn');
   const reactionBody = document.getElementById('reaction-body');
   const reactionSaveBanner = document.getElementById('reaction-save-banner');
+  const exportBtn = document.getElementById('export-btn');
+  const importBtn = document.getElementById('import-btn');
+  const importFileInput = document.getElementById('import-file-input');
+  const importWarningBanner = document.getElementById('import-warning-banner');
 
   // ---- ユーティリティ ----
 
@@ -129,6 +133,167 @@
   function render() {
     renderPresets();
     renderBindings();
+  }
+
+  function showImportWarning(message) {
+    importWarningBanner.textContent = message;
+    importWarningBanner.classList.remove('hidden');
+  }
+
+  function clearImportWarning() {
+    importWarningBanner.textContent = '';
+    importWarningBanner.classList.add('hidden');
+  }
+
+  function normalizeKeybindings(raw) {
+    const base = { ...DEFAULT_KEYBINDINGS };
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+      return { value: base, invalid: true };
+    }
+    let invalid = false;
+    Object.keys(DEFAULT_KEYBINDINGS).forEach((key) => {
+      if (!(key in raw)) return;
+      if (typeof raw[key] === 'string') base[key] = raw[key];
+      else invalid = true;
+    });
+    return { value: base, invalid };
+  }
+
+  function normalizeSettings(raw) {
+    const base = { ...DEFAULT_SETTINGS };
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+      return { value: base, invalid: true };
+    }
+    let invalid = false;
+    Object.keys(DEFAULT_SETTINGS).forEach((key) => {
+      if (!(key in raw)) return;
+      if (typeof raw[key] === 'boolean') base[key] = raw[key];
+      else invalid = true;
+    });
+    return { value: base, invalid };
+  }
+
+  function normalizeReactionSlots(raw) {
+    const base = DEFAULT_REACTION_SLOTS.map((slot) => ({ ...slot }));
+    if (!Array.isArray(raw)) {
+      return { value: base, invalid: true };
+    }
+    let invalid = false;
+    base.forEach((slot, idx) => {
+      const from = raw[idx];
+      if (from === undefined) return;
+      if (!from || typeof from !== 'object' || Array.isArray(from)) { invalid = true; return; }
+      if ('key' in from) {
+        if (typeof from.key === 'string') slot.key = from.key;
+        else invalid = true;
+      }
+      if ('emoji' in from) {
+        if (typeof from.emoji === 'string') slot.emoji = from.emoji;
+        else invalid = true;
+      }
+    });
+    return { value: base, invalid };
+  }
+
+  function normalizeUserPresets(raw) {
+    if (!Array.isArray(raw)) return { value: [], invalid: true };
+    const value = [];
+    let invalid = false;
+    raw.forEach((preset) => {
+      if (!preset || typeof preset !== 'object' || Array.isArray(preset)) { invalid = true; return; }
+      if (typeof preset.id !== 'string' || typeof preset.name !== 'string') { invalid = true; return; }
+      const normalizedBindings = normalizeKeybindings(preset.bindings);
+      if (normalizedBindings.invalid) invalid = true;
+      value.push({
+        id: preset.id,
+        name: preset.name,
+        readonly: false,
+        bindings: normalizedBindings.value,
+      });
+    });
+    return { value, invalid };
+  }
+
+  function normalizeActivePresetId(raw, userPresets) {
+    if (typeof raw !== 'string') return { value: 'default', invalid: true };
+    const existsBuiltin = BUILTIN_PRESETS.some((preset) => preset.id === raw);
+    const existsUser = userPresets.some((preset) => preset.id === raw);
+    if (existsBuiltin || existsUser) return { value: raw, invalid: false };
+    return { value: 'default', invalid: true };
+  }
+
+  function exportConfig() {
+    const payload = {
+      keybindings: current,
+      settings: currentSettings,
+      reactionSlots,
+      userPresets: presets.filter((preset) => !preset.readonly).map((preset) => ({
+        id: preset.id,
+        name: preset.name,
+        bindings: preset.bindings,
+      })),
+      activePresetId,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const date = new Date().toISOString().replace(/[:.]/g, '-');
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `karotter-config-${date}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    clearImportWarning();
+  }
+
+  async function importConfig(file) {
+    if (!file) return;
+    let parsed;
+    try {
+      parsed = JSON.parse(await file.text());
+    } catch (_error) {
+      showImportWarning('インポートに失敗しました: JSON 形式が不正です。');
+      return;
+    }
+
+    const keybindings = normalizeKeybindings(parsed.keybindings);
+    const settings = normalizeSettings(parsed.settings);
+    const slots = normalizeReactionSlots(parsed.reactionSlots);
+    const userPresets = normalizeUserPresets(parsed.userPresets);
+    const activeId = normalizeActivePresetId(parsed.activePresetId, userPresets.value);
+    const hasInvalid = keybindings.invalid || settings.invalid || slots.invalid || userPresets.invalid || activeId.invalid;
+
+    current = keybindings.value;
+    currentSettings = settings.value;
+    reactionSlots = slots.value;
+    presets = [...BUILTIN_PRESETS, ...userPresets.value];
+    activePresetId = activeId.value;
+
+    if (!presets.some((preset) => preset.id === activePresetId)) {
+      activePresetId = 'default';
+    }
+
+    const activePreset = presets.find((preset) => preset.id === activePresetId);
+    if (activePreset) current = { ...activePreset.bindings };
+
+    KarotterStorage.saveKeybindings(current);
+    KarotterStorage.saveSettings(currentSettings);
+    KarotterStorage.saveReactionSlots(reactionSlots);
+    chrome.storage.sync.set({
+      userPresets: userPresets.value,
+      activePresetId,
+    });
+
+    render();
+    renderSettings();
+    renderReactionSlots();
+    if (hasInvalid) {
+      showImportWarning('一部データは型不正のため破棄し、デフォルト値で補完しました。');
+    } else {
+      clearImportWarning();
+    }
+
+    saveBanner.classList.remove('hidden');
+    setTimeout(() => saveBanner.classList.add('hidden'), 2500);
   }
 
   // ---- プリセット操作 ----
@@ -261,6 +426,13 @@
   tbody.addEventListener('click', handleEditClick);
   document.addEventListener('keydown', handleKeyCapture, true);
   resetBtn.addEventListener('click', reset);
+  exportBtn.addEventListener('click', exportConfig);
+  importBtn.addEventListener('click', () => importFileInput.click());
+  importFileInput.addEventListener('change', async () => {
+    const [file] = importFileInput.files || [];
+    await importConfig(file);
+    importFileInput.value = '';
+  });
   presetSaveBtn.addEventListener('click', saveAsPreset);
   presetNameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveAsPreset(); });
 
