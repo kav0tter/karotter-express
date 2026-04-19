@@ -111,3 +111,73 @@ const HelpOverlay = (() => {
 
   return { show, hide, toggle, isVisible };
 })();
+
+const FocusStatusBadge = (() => {
+  let host = null;
+  let shadowRoot = null;
+  let status = { current: null, total: 0 };
+
+  function buildStyle() {
+    return `
+      :host { all: initial; }
+      #badge {
+        position: fixed;
+        right: 16px;
+        bottom: 20px;
+        z-index: 99996;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--border-soft);
+        background: var(--surface-card);
+        color: var(--text-secondary);
+        box-shadow: var(--surface-shadow);
+        font: 600 12px/1.2 system-ui, sans-serif;
+      }`;
+  }
+
+  function format(current, total) {
+    const currentLabel = Number.isInteger(current) && current > 0 ? current : '-';
+    return `Post ${currentLabel} / ${total}`;
+  }
+
+  function ensureHost() {
+    if (host) return;
+    host = document.createElement('div');
+    host.id = 'krs-focus-status-host';
+    shadowRoot = host.attachShadow({ mode: 'closed' });
+
+    const style = document.createElement('style');
+    style.textContent = buildStyle();
+    shadowRoot.appendChild(style);
+
+    const badge = document.createElement('div');
+    badge.id = 'badge';
+    shadowRoot.appendChild(badge);
+    document.body.appendChild(host);
+  }
+
+  function setStatus(current, total) {
+    status = {
+      current: Number.isInteger(current) ? current : null,
+      total: Number.isInteger(total) && total >= 0 ? total : 0,
+    };
+    if (!host) return;
+    const badge = shadowRoot?.getElementById('badge');
+    if (badge) badge.textContent = format(status.current, status.total);
+  }
+
+  function show() {
+    ensureHost();
+    setStatus(status.current, status.total);
+  }
+
+  function hide() {
+    if (host) {
+      host.remove();
+      host = null;
+      shadowRoot = null;
+    }
+  }
+
+  return { show, hide, setStatus };
+})();

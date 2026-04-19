@@ -67,6 +67,7 @@ const HELP_SECTIONS = [
 const DEFAULT_SETTINGS = {
   showInlineHints:   false,
   showFloatingPanel: false,
+  showFocusStatusBadge: true,
 };
 
 const DEFAULT_REACTION_SLOTS = [
