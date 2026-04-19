@@ -129,35 +129,67 @@
     return false;
   }
 
-  // ---- Esc の文脈依存処理 ----
-  function handleEscape() {
-    // 0. 下書き保存確認ダイアログが表示中なら「破棄して閉じる」をクリック（isInputFocused より先に判定）
+  function discardDialog() {
     const discardBtn = Array.from(document.querySelectorAll('button'))
       .find(b => b.textContent.trim() === '破棄して閉じる');
-    if (discardBtn) { discardBtn.click(); return; }
-    // 1. 入力欄にフォーカスがあれば blur して終了
-    if (isInputFocused()) {
-      document.activeElement.blur();
-      return;
-    }
-    // 2. ヘルプオーバーレイが開いていれば閉じる
-    if (HelpOverlay.isVisible()) {
-      HelpOverlay.hide();
-      return;
-    }
-    // 3. モーダルが開いていれば閉じる（karotter は Esc でネイティブに閉じる）
+    if (!discardBtn) return false;
+    discardBtn.click();
+    return true;
+  }
+
+  function inputBlur() {
+    if (!isInputFocused()) return false;
+    document.activeElement?.blur();
+    return true;
+  }
+
+  function helpClose() {
+    if (!HelpOverlay.isVisible()) return false;
+    HelpOverlay.hide();
+    return true;
+  }
+
+  function modalClose() {
     const url = location.href;
-    if (url.includes('compose=1') || document.querySelector('[role="dialog"]')) {
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-      return;
-    }
-    // 3. 投稿フォーカスを外す
-    if (focusedIndex >= 0) {
-      clearFocus();
-      return;
-    }
-    // 4. 前のページへ戻る
+    if (!url.includes('compose=1') && !document.querySelector('[role="dialog"]')) return false;
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    return true;
+  }
+
+  function clearFocusHandler() {
+    if (focusedIndex < 0) return false;
+    clearFocus();
+    return true;
+  }
+
+  function historyBack() {
     history.back();
+    return true;
+  }
+
+  // ---- Esc の文脈依存処理 ----
+  const ESCAPE_HANDLERS = {
+    discardDialog,
+    inputBlur,
+    helpClose,
+    modalClose,
+    clearFocus: clearFocusHandler,
+    historyBack,
+  };
+
+  function handleEscape() {
+    const configuredOrder = Array.isArray(settings.escapeBehaviorOrder)
+      ? settings.escapeBehaviorOrder
+      : DEFAULT_SETTINGS.escapeBehaviorOrder;
+    const fallback = DEFAULT_SETTINGS.escapeBehaviorOrder.filter(name => !configuredOrder.includes(name));
+    const order = [...configuredOrder, ...fallback];
+
+    for (const name of order) {
+      const handler = ESCAPE_HANDLERS[name];
+      if (typeof handler === 'function' && handler()) {
+        return;
+      }
+    }
   }
 
   // ---- アクション実行 ----

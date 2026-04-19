@@ -68,6 +68,14 @@ const DEFAULT_SETTINGS = {
   showInlineHints:   false,
   showFloatingPanel: false,
   showFocusStatusBadge: true,
+  escapeBehaviorOrder: [
+    'discardDialog',
+    'inputBlur',
+    'helpClose',
+    'modalClose',
+    'clearFocus',
+    'historyBack',
+  ],
 };
 
 const DEFAULT_REACTION_SLOTS = [

@@ -9,9 +9,18 @@
   let captureBuffer = [];   // 収録中のキー列
   let reactionSlots = DEFAULT_REACTION_SLOTS.map(s => ({ ...s }));
   let capturingReactionIdx = null;
+  const ESCAPE_BEHAVIOR_LABELS = {
+    discardDialog: '下書き破棄ダイアログを閉じる',
+    inputBlur: '入力中フォーカスを外す',
+    helpClose: 'ヘルプを閉じる',
+    modalClose: 'モーダルを閉じる',
+    clearFocus: '投稿フォーカスを解除',
+    historyBack: '前のページへ戻る',
+  };
 
   const inlineHintsToggle   = document.getElementById('toggle-inline-hints');
   const floatingPanelToggle = document.getElementById('toggle-floating-panel');
+  const escapeOrderList = document.getElementById('escape-order-list');
   const focusStatusBadgeToggle = document.getElementById('toggle-focus-status-badge');
 
   const tbody         = document.getElementById('bindings-body');
@@ -149,6 +158,32 @@
   function render() {
     renderPresets();
     renderBindings();
+  }
+
+  function normalizedEscapeOrder(order) {
+    const valid = DEFAULT_SETTINGS.escapeBehaviorOrder;
+    const current = Array.isArray(order) ? order.filter(name => valid.includes(name)) : [];
+    const missing = valid.filter(name => !current.includes(name));
+    return [...current, ...missing];
+  }
+
+  function renderEscapeOrder() {
+    escapeOrderList.innerHTML = '';
+    const order = normalizedEscapeOrder(currentSettings.escapeBehaviorOrder);
+    currentSettings.escapeBehaviorOrder = order;
+
+    order.forEach((name, idx) => {
+      const li = document.createElement('li');
+      li.className = 'escape-order-item';
+      li.innerHTML = `
+        <span class="escape-order-name">${ESCAPE_BEHAVIOR_LABELS[name] ?? name}</span>
+        <div class="escape-order-actions">
+          <button class="btn-edit escape-move-btn" data-move-escape="up" data-index="${idx}" ${idx === 0 ? 'disabled' : ''}>↑</button>
+          <button class="btn-edit escape-move-btn" data-move-escape="down" data-index="${idx}" ${idx === order.length - 1 ? 'disabled' : ''}>↓</button>
+        </div>
+      `;
+      escapeOrderList.appendChild(li);
+    });
   }
 
   function showImportWarning(message) {
@@ -428,6 +463,7 @@
       showInlineHints:   inlineHintsToggle.checked,
       showFloatingPanel: floatingPanelToggle.checked,
       showFocusStatusBadge: focusStatusBadgeToggle.checked,
+      escapeBehaviorOrder: normalizedEscapeOrder(currentSettings.escapeBehaviorOrder),
     };
     KarotterStorage.saveSettings(currentSettings);
   }
@@ -436,6 +472,17 @@
     inlineHintsToggle.checked   = currentSettings.showInlineHints;
     floatingPanelToggle.checked = currentSettings.showFloatingPanel;
     focusStatusBadgeToggle.checked = currentSettings.showFocusStatusBadge;
+    renderEscapeOrder();
+  }
+
+  function moveEscapeBehavior(index, direction) {
+    const order = normalizedEscapeOrder(currentSettings.escapeBehaviorOrder);
+    const target = direction === 'up' ? index - 1 : index + 1;
+    if (target < 0 || target >= order.length) return;
+    [order[index], order[target]] = [order[target], order[index]];
+    currentSettings.escapeBehaviorOrder = order;
+    renderEscapeOrder();
+    saveSettings();
   }
 
   // ---- リセット ----
@@ -489,6 +536,12 @@
     capturingAction = null;
     renderReactionSlots();
     renderBindings();
+  });
+  escapeOrderList.addEventListener('click', (e) => {
+    const button = e.target.closest('[data-move-escape]');
+    if (!button) return;
+    const idx = parseInt(button.dataset.index, 10);
+    moveEscapeBehavior(idx, button.dataset.moveEscape);
   });
 
   // ---- タブ切り替え ----
