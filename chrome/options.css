@@ -530,6 +530,46 @@ kbd.conflict {
   background: #000;
 }
 
+.esc-order-head {
+  margin-top: 32px;
+}
+
+.escape-order-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.escape-order-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 4px;
+  border-bottom: 1px solid var(--line);
+}
+
+.escape-order-item:last-child {
+  border-bottom: none;
+}
+
+.escape-order-name {
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.escape-order-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.escape-move-btn {
+  min-width: 38px;
+  padding: 6px 0;
+}
+
 /* ---- EMOJI INPUT ---- */
 .emoji-input {
   width: 60px;

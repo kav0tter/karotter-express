@@ -67,6 +67,14 @@ const HELP_SECTIONS = [
 const DEFAULT_SETTINGS = {
   showInlineHints:   false,
   showFloatingPanel: false,
+  escapeBehaviorOrder: [
+    'discardDialog',
+    'inputBlur',
+    'helpClose',
+    'modalClose',
+    'clearFocus',
+    'historyBack',
+  ],
 };
 
 const DEFAULT_REACTION_SLOTS = [

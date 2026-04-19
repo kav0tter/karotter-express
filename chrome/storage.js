@@ -6,7 +6,13 @@
   }
 
   function mergeSettings(raw) {
-    return { ...DEFAULT_SETTINGS, ...(raw ?? {}) };
+    const merged = { ...DEFAULT_SETTINGS, ...(raw ?? {}) };
+    const valid = DEFAULT_SETTINGS.escapeBehaviorOrder;
+    const stored = Array.isArray(merged.escapeBehaviorOrder)
+      ? merged.escapeBehaviorOrder.filter(name => valid.includes(name))
+      : [];
+    merged.escapeBehaviorOrder = [...stored, ...valid.filter(name => !stored.includes(name))];
+    return merged;
   }
 
   function mergeReactionSlots(raw) {
