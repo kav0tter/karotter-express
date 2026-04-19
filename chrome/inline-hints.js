@@ -1,15 +1,6 @@
 const InlineHints = (() => {
   const HINT_CLASS = 'krs-hint';
 
-  function keyLabel(binding) {
-    const map = { ArrowDown: '↓', ArrowUp: '↑', ArrowLeft: '←', ArrowRight: '→',
-                  Enter: '↵', Escape: 'Esc', ' ': 'Spc' };
-    const parts = (binding ?? '').split('+');
-    const base = parts[parts.length - 1];
-    const mods = parts.slice(0, -1);
-    return [...mods, map[base] ?? base].join('+');
-  }
-
   function findReplyBtn(post) {
     const reaction = post.querySelector('.reaction-trigger');
     if (reaction) {
@@ -33,7 +24,7 @@ const InlineHints = (() => {
     btn.style.position = 'relative';
     const hint = document.createElement('kbd');
     hint.className = HINT_CLASS;
-    hint.textContent = keyLabel(key);
+    hint.textContent = formatKeyLabel(key, { compact: true });
     btn.appendChild(hint);
   }
 
@@ -77,7 +68,7 @@ const InlineHints = (() => {
       const prevKey = bindings[prevA];
       const nextKey = bindings[nextA];
       if (!prevKey && !nextKey) return;
-      const label = `${keyLabel(prevKey)} ${keyLabel(nextKey)}`;
+      const label = `${formatKeyLabel(prevKey, { compact: true })} ${formatKeyLabel(nextKey, { compact: true })}`;
       const hintId = `${prevA}/${nextA}`;
       if (c.dataset.krsHint === hintId && c.querySelector(`.${HINT_CLASS}`)) return;
       c.querySelectorAll(`.${HINT_CLASS}`).forEach(el => el.remove());

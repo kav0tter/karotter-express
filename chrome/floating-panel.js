@@ -50,20 +50,11 @@ const FloatingPanel = (() => {
       }`;
   }
 
-  function keyLabel(binding) {
-    const map = { ArrowDown: '↓', ArrowUp: '↑', ArrowLeft: '←', ArrowRight: '→',
-                  Enter: 'Enter', Escape: 'Esc', ' ': 'Space' };
-    const parts = (binding ?? '').split('+');
-    const base = parts[parts.length - 1];
-    const mods = parts.slice(0, -1);
-    return [...mods, map[base] ?? base].join('+');
-  }
-
   function buildPanelHTML(bindings) {
     const sectionsHTML = HELP_SECTIONS.map(({ title, actions }) => {
       const rows = actions.map(action => `
         <div class="row">
-          <kbd>${keyLabel(bindings[action] ?? DEFAULT_KEYBINDINGS[action])}</kbd>
+          <kbd>${formatKeyLabel(bindings[action] ?? DEFAULT_KEYBINDINGS[action])}</kbd>
           <span>${ACTION_LABELS[action]}</span>
         </div>`).join('');
       return `<section><h3>${title}</h3>${rows}</section>`;
