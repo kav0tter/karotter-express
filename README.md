@@ -27,7 +27,7 @@
 
 1. このリポジトリをクローンまたはダウンロード
    ```bash
-   git clone https://github.com/szk27/karotter-express.git
+   git clone https://github.com/kav0tter/karotter-express.git
    ```
 
 2. Chrome の拡張機能ページ (`chrome://extensions/`) を開く
@@ -42,7 +42,7 @@
 
 1. このリポジトリをクローンまたはダウンロード
    ```bash
-   git clone https://github.com/szk27/karotter-express.git
+   git clone https://github.com/kav0tter/karotter-express.git
    ```
 
 2. Firefox のアドオンページ (`about:debugging#/runtime/this-firefox`) を開く
